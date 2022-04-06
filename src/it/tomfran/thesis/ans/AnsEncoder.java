@@ -7,18 +7,18 @@ import java.util.Map;
 
 public class AnsEncoder {
 
-    // sum of frequencies: might change it to a power of two and approximate
+    /* sum of frequencies: might change it to a power of two and approximate */
     protected int M;
-    // number of symbols
+    /* number of symbols */
     protected int N;
-    // sym to int and inverted
+    /* sym to int and inverted */
     protected HashMap<Integer, Integer> symbolsMapping;
     protected HashMap<Integer, Integer> invSymbolsMapping;
-    // sym frequencies, cumulative and sym array to encode and decode
+    /* sym frequencies, cumulative and sym array to encode and decode */
     protected int[] frequencies;
     protected int[] cumulative;
     protected int[] sym;
-    // encoder state
+    /* encoder state */
     protected long state;
 
     public AnsEncoder(SymbolStats s){
@@ -40,10 +40,8 @@ public class AnsEncoder {
         sym = new int[M+1];
         int pos = 1;
         for (int i = 0; i < N; i++) {
-            //int nextSym = invSymbolsMapping.get(i);
             for (int j = 0; j < frequencies[i]; j++)
                 sym[pos++] = i;
-//                sym[pos++] = nextSym;
 
 
         }
