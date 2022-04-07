@@ -1,27 +1,40 @@
 package it.tomfran.thesis.ans;
 
+import it.tomfran.thesis.io.LongOutputStream;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
 
 public class AnsEncoder {
 
-    /* sum of frequencies: might change it to a power of two and approximate */
+    /** Sum of frequencies: might change it to a power of two and approximate */
     protected int M;
-    /* number of symbols */
+    /** Number of symbols */
     protected int N;
-    /* sym to int and inverted */
+    /** Symbols to index mapping */
     protected HashMap<Integer, Integer> symbolsMapping;
+    /** Index to symbols mapping */
     protected HashMap<Integer, Integer> invSymbolsMapping;
-    /* sym frequencies, cumulative and sym array to encode and decode */
+    /** Symbol frequencies */
     protected int[] frequencies;
+    /** Cumulative array */
     protected int[] cumulative;
+    /** Symbol array */
     protected int[] sym;
     /* encoder state */
     protected long state;
+    /** Stream to write overflows */
+    protected LongOutputStream os;
+    /** Normalization threshold, 2^32  */
+    protected final long NORM_THS = (1L << 24);
+    /** Number of normalizations, required to rebuild the encoder */
+    protected int normCount;
+    /** Arraylist of intermediate states, required to write them reversed*/
+    protected ArrayList<Integer> stateParts;
 
-    public AnsEncoder(SymbolStats s){
+    public AnsEncoder(SymbolStats s, LongOutputStream lis){
         // get mappings and frequencies
         symbolsMapping = s.symbolsMapping;
         invSymbolsMapping = s.invSymbolsMapping;
@@ -46,6 +59,10 @@ public class AnsEncoder {
 
         }
         state = 0;
+        normCount = 0;
+        stateParts = new ArrayList<>();
+        //out stream
+        os = lis;
     }
 
     public void encode(int s){
@@ -56,46 +73,72 @@ public class AnsEncoder {
         fs = frequencies[symIndex];
         cs = cumulative[symIndex];
         // update the state
-        j = state / (long)fs;
-        r = state % (long)fs;
+        j = Long.divideUnsigned(state, (long)fs);
+        // if state exceeds 32 bits
+        // write on output stream and reset state
+        if (Long.compareUnsigned(j, NORM_THS) >= 0) {
+            normalize();
+            j = Long.divideUnsigned(state, (long)fs);
+        }
+        r = Long.remainderUnsigned(state, (long)fs);
         state = j*M + cs + r;
     }
 
-    public int decode(){
-        int fs, cs, r, symIndex;
-        long j;
-        // remainder to identity symbol
-        r = (int) (1 + ((state-1) % M));
-        // get freq and cumulative
-        symIndex = sym[r];
-        fs = frequencies[symIndex];
-        cs = cumulative[symIndex];
-        // update the state
-        j = (state - r) / M;
-        state = j * fs - cs + r;
-
-        return invSymbolsMapping.get(symIndex);
+    public void normalize() {
+        System.out.println("Normalization in progress");
+        if(Integer.compareUnsigned((int)state, Integer.MAX_VALUE) >= 0){
+            System.out.println("STATE IS BIGGER THAN EXPECTED");
+        }
+        stateParts.add((int)state);
+        state = 0L;
+        normCount ++;
     }
+
+    public void flush() {
+        try {
+            // we write all the required info to rebuild the decoder
+            // number of symbols, symbol mappings, frequencies
+            // M, cumulative and sym array will be built by the decoder
+            os.writeInt(N, 31);
+            for (Entry<Integer, Integer> e : symbolsMapping.entrySet()) {
+                os.writeInt(e.getKey(), 31);
+                os.writeInt(e.getValue(), 31);
+            }
+            for (int e : frequencies)
+                os.writeInt(e, 31);
+
+            // write the number of intermediate states
+            // then the state parts in reversed order
+            os.writeInt(normCount, 31);
+            for (int i = normCount-1; i >= 0; i--) {
+                System.out.println("ENC - writing next state: " + stateParts.get(i) + " -> " + Long.toBinaryString(stateParts.get(i)));
+                os.writeInt(stateParts.get(i), 31);
+            }
+            os.flushBuffer();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public void encodeAll(Iterable<Integer> l){
         for (Integer e : l)
             encode(e);
+        // last normalization required, might be unnecessary
+        normalize();
+        // flush the state in reverse order on the stream
+        flush();
     }
 
-    public List<Integer> decodeAll(){
-        ArrayList<Integer> ret = new ArrayList<>();
-        while(state > 0)
-            ret.add(decode());
-        return ret;
-    }
+
 
     public void debugPrint(){
         System.out.println("---- Symbol mapping --------");
-        for (Map.Entry<Integer, Integer> e : symbolsMapping.entrySet())
+        for (Entry<Integer, Integer> e : symbolsMapping.entrySet())
             System.out.println(e.getKey() + "->" + e.getValue());
 
         System.out.println("---- Inv Symbol mapping ----");
-        for (Map.Entry<Integer, Integer> e : invSymbolsMapping.entrySet())
+        for (Entry<Integer, Integer> e : invSymbolsMapping.entrySet())
             System.out.println(e.getKey() + "->" + e.getValue());
 
         System.out.println("---- Frequencies -----------");

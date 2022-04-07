@@ -12,8 +12,8 @@ public class LongStreamTest {
         LongOutputStream los = new LongOutputStream(os);
 
         try {
-            for (int i = 0; i < 10; i++) {
-                los.writeInt(122 + (i %2), 7);
+            for (int i = 0; i < 100; i++) {
+                los.writeInt(73421893 + (i %2), 31);
             }
             los.flushBuffer();
         } catch (IOException e) {
@@ -25,9 +25,11 @@ public class LongStreamTest {
 
         int n;
         try {
-            for (int i = 0; i < 10; i++) {
-                n = lis.readInt(7);
-                assert (n == (122 + (i %2)));
+            for (int i = 0; i < 100; i++) {
+                n = lis.readInt(31);
+                if (n != (73421893 + (i %2))){
+                    System.out.println("READ: " + n + " EXPECTED " + (73421893 + (i %2)));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
