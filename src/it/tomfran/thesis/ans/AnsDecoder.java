@@ -97,7 +97,7 @@ public class AnsDecoder {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("DEC - Reading next state: " + state + " -> " + Long.toBinaryString(state));
+//        System.out.println("DEC - Reading next state: " + state + " -> " + Long.toBinaryString(state));
 
     }
 

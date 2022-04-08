@@ -76,16 +76,15 @@ public class AnsEncoder {
         j = Long.divideUnsigned(state, (long)fs);
         // if state exceeds 32 bits
         // write on output stream and reset state
-        if (Long.compareUnsigned(j, NORM_THS) >= 0) {
-            normalize();
-            j = Long.divideUnsigned(state, (long)fs);
-        }
         r = Long.remainderUnsigned(state, (long)fs);
         state = j*M + cs + r;
+        if (Long.compareUnsigned(state, NORM_THS) >= 0) {
+            normalize();
+        }
     }
 
     public void normalize() {
-        System.out.println("Normalization in progress");
+//        System.out.println("Normalization in progress");
         if(Integer.compareUnsigned((int)state, Integer.MAX_VALUE) >= 0){
             System.out.println("STATE IS BIGGER THAN EXPECTED");
         }
@@ -111,7 +110,7 @@ public class AnsEncoder {
             // then the state parts in reversed order
             os.writeInt(normCount, 31);
             for (int i = normCount-1; i >= 0; i--) {
-                System.out.println("ENC - writing next state: " + stateParts.get(i) + " -> " + Long.toBinaryString(stateParts.get(i)));
+//                System.out.println("ENC - writing next state: " + stateParts.get(i) + " -> " + Long.toBinaryString(stateParts.get(i)));
                 os.writeInt(stateParts.get(i), 31);
             }
             os.flushBuffer();
@@ -151,10 +150,10 @@ public class AnsEncoder {
             System.out.print(cumulative[i] + " ");
         System.out.println();
 
-        System.out.println("---- Sym array -------------");
-        for (int i = 0; i < M+1; i++)
-            System.out.print(sym[i] + " ");
-        System.out.println();
+//        System.out.println("---- Sym array -------------");
+//        for (int i = 0; i < M+1; i++)
+//            System.out.print(sym[i] + " ");
+//        System.out.println();
     }
 
     public void printState(){

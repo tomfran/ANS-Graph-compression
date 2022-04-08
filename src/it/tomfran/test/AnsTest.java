@@ -8,33 +8,40 @@ import it.tomfran.thesis.io.LongOutputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.lang.instrument.Instrumentation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
+
 
 public class AnsTest {
 
     public static void main(String[] args) {
-        ArrayList<Integer> l = new ArrayList<Integer>(List.of(1, 3, 1, 2, 2, 1, 1, 1,
-                                                                2, 3, 1, 1, 1, 1, 1, 1,
-                                                                1, 1, 1, 1, 1, 1, 1, 1,
-                                                                4, 5, 6, 7, 8, 8, 7, 1, 10,1, 1, 1, 1, 1, 1, 1, 1,
-                4, 5, 6, 7, 8, 8, 7, 1, 10,1, 1, 1, 1, 1, 1, 1, 1,
-                4, 5, 6, 7, 8, 8, 7, 1, 10,1, 1, 1, 1, 1, 1, 1, 1,
-                4, 5, 6, 7, 8, 8, 7, 1, 10,1, 1, 1, 1, 1, 1, 1, 1,
-                4, 5, 6, 7, 8, 8, 7, 1, 10,
-                                                                1, 1, 1, 1, 1, 1, 1, 4));
-        System.out.println("### ENCODER ###");
 
+        int[] choices = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 5, 6, 7, 8, 9, 10};
+
+        ArrayList<Integer> l = new ArrayList<>();
+
+        Random rand = new Random();
+        int NUM_INT = 100000;
+        while ((NUM_INT --) != 0)
+            l.add(choices[Integer.max(0,(rand.nextInt()%choices.length))]);
+
+        System.out.println(l.size());
+
+        System.out.println("### ENCODER ###");
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         LongOutputStream los = new LongOutputStream(os);
 
-        SymbolStats s = new SymbolStats(l);
+        SymbolStats s = new SymbolStats(l, 10);
         AnsEncoder ans = new AnsEncoder(s, los);
+        ans.debugPrint();
         Collections.reverse(l);
         ans.encodeAll(l);
         Collections.reverse(l);
         System.out.println("OK");
+
 
         System.out.println("\n\n### DECODER ###");
         ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
