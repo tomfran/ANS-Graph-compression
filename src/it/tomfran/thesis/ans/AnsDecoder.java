@@ -23,13 +23,20 @@ public class AnsDecoder {
     protected int[] cumulative;
     /** Symbol array */
     protected int[] sym;
-    /* encoder state */
-    protected long state;
     /** Stream to read encoder info */
     protected LongInputStream is;
-    /** Number of normalizations, required to rebuild the encoder */
-    protected int normCount;
+    /** Number of states, required to rebuild the encoder */
+    protected int stateCount;
+    /** State list */
+    protected int[] stateList;
+    /** State index */
+    protected int stateIndex;
 
+    /**
+     * Build a decoder initializing the symbol statistics from the LongInputStream.
+     *
+     * @param lis stream containing an encoder representation.
+     */
     public AnsDecoder(LongInputStream lis) {
         is = lis;
         initializeVariables();
@@ -45,6 +52,7 @@ public class AnsDecoder {
             // initial state
 
             N = is.readInt(31);
+            System.out.println("DECODER, read N: " + N);
             symbolsMapping = new HashMap<>();
             invSymbolsMapping = new HashMap<>();
             int symbol, index;
@@ -73,37 +81,56 @@ public class AnsDecoder {
                     sym[pos++] = i;
             }
             // initialize normalization count and initial state
-            normCount = is.readInt(31) - 1;
-            readNextState();
+            stateCount = is.readInt(31);
+            stateIndex = 0;
+            stateList = new int[stateCount];
+            fillStates();
 
         } catch (IOException e) {
             System.out.println("Could not initialize variables in decoder");
         }
     }
 
+    private void fillStates(){
+        for (int i = 0; i < stateCount; i++) {
+            stateList[i] = readNextState();
+        }
+    }
+
+    /**
+     * Decode the encoded sequence from the state.
+     *
+     * @return decoded integer List.
+     */
     public List<Integer> decodeAll(){
         ArrayList<Integer> ret = new ArrayList<>();
-        for (int i = 0; i < normCount; i++) {
-            while(Long.compareUnsigned(state, 0L) > 0)
+        for (int i = 0; i < stateCount; i++) {
+            while(Long.compareUnsigned(stateList[stateIndex], 0L) > 0)
                 ret.add(decode());
-            readNextState();
+            stateIndex ++;
         }
         return ret;
     }
 
-    private void readNextState() {
+    private int readNextState() {
+        int ret = -1;
         try {
-            state = is.readInt(31);
+            ret = is.readInt(31);
         } catch (IOException e) {
             e.printStackTrace();
         }
-//        System.out.println("DEC - Reading next state: " + state + " -> " + Long.toBinaryString(state));
-
+//        System.out.println("DEC reading next state: " + ret);
+        return ret;
     }
 
+    /**
+     * Decode a single element from the state.
+     *
+     * @return decoded integer.
+     */
     public int decode(){
-        int fs, cs, r, symIndex;
-        long j;
+        int fs, cs, r, symIndex, state, j;
+        state = stateList[stateIndex];
         // remainder to identity symbol
         r = (int) (1 + (Long.remainderUnsigned(state-1, M)));
         // get freq and cumulative
@@ -111,9 +138,9 @@ public class AnsDecoder {
         fs = frequencies[symIndex];
         cs = cumulative[symIndex];
         // update the state
-        j = Long.divideUnsigned(state-r, M);
+        j = Integer.divideUnsigned(state-r, M);
 //        j = (state - r) / M;
-        state = j * fs - cs + r;
+        stateList[stateIndex] = j * fs - cs + r;
 
         return invSymbolsMapping.get(symIndex);
     }
@@ -143,7 +170,11 @@ public class AnsDecoder {
         System.out.println();
     }
 
+    /**
+     * Print the current state and its binary representation.
+     */
     public void printState(){
+        int state = stateList[stateIndex];
         double s = (state == 0)? 0 : Math.ceil(Math.log(state));
         System.out.println("ANS state -> " + state + " " + s + " bits");
     }

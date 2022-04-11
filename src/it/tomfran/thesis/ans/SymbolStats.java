@@ -7,14 +7,20 @@ import java.util.stream.Collectors;
 
 public class SymbolStats {
 
-    protected Iterable<Integer> iterator;
+    protected int[] iterator;
     protected HashMap<Integer, Integer> symbolsMapping;
     protected HashMap<Integer, Integer> invSymbolsMapping;
     protected int[] frequencies;
     protected int total;
     protected int precision;
 
-    public SymbolStats(Iterable<Integer> iterator, int d) {
+    /**
+     * Build symbol statistics from an Integer Iterable.
+     *
+     * @param iterator iterable with Integers.
+     * @param d probability approximation precision.
+     */
+    public SymbolStats(int[] iterator, int d) {
         this.iterator = iterator;
         precision = 2 << d;
         buildFrequencies();

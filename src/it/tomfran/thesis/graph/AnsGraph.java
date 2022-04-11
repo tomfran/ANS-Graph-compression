@@ -7,8 +7,13 @@ import it.unimi.dsi.webgraph.ImmutableGraph;
 import it.unimi.dsi.webgraph.LazyIntIterator;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 public class AnsGraph extends ImmutableGraph {
+
+    protected int numNodes;
+    protected int[] outdegree;
+    protected AnsEncoder[] nodeEncoder;
 
     public static void store(ImmutableGraph g) {
 
@@ -18,14 +23,47 @@ public class AnsGraph extends ImmutableGraph {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         LongOutputStream los = new LongOutputStream(os);
 
+        // for each node, get the outdegree and put it on the stream
+        // get his successors, order (?),
+        // encode the list reversed, by gap,
+        // flush the encoder to the stream with encodeAll(list, false),
+        // apart from the last.
+        int nodes = g.numNodes();
 
+        try {
+            los.writeInt(nodes, 31);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-//        SymbolStats s = new SymbolStats();
-//        AnsEncoder ans = new AnsEncoder(s, los);
+        for (int i = 0; i < nodes; i++) {
+            int[] succ = g.successorArray(i);
+            if (succ.length == 0)
+                continue;
+            computeGaps(succ);
+            SymbolStats s = new SymbolStats(succ, 3);
+            AnsEncoder ans = new AnsEncoder(s, los);
+            ans.encodeAll(succ);
+            ans.flush((i == (nodes-1)));
+        }
 
+        System.out.println("Encoded");
 
-        // flush the buffer to disk
+    }
 
+    private static void computeGaps(int[] arr){
+        int n = arr.length;
+        int tmp;
+        // compute gaps
+        for (int i = n-1; i >= 1; i--) {
+            arr[i] -= arr[i-1];
+        }
+        // reverse order
+        for (int i = 0; i < n/2; i++){
+            tmp = arr[i];
+            arr[i] = arr[n-i-1];
+            arr[n-i-1] = tmp;
+        }
     }
 
     public LazyIntIterator successors(int node) {

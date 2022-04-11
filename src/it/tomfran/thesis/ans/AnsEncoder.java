@@ -28,12 +28,18 @@ public class AnsEncoder {
     /** Stream to write overflows */
     protected LongOutputStream os;
     /** Normalization threshold, 2^32  */
-    protected final long NORM_THS = (1L << 24);
+    protected final long NORM_THS = (1L << 31);
     /** Number of normalizations, required to rebuild the encoder */
     protected int normCount;
     /** Arraylist of intermediate states, required to write them reversed*/
     protected ArrayList<Integer> stateParts;
 
+    /**
+     * Create a new encoder from symbols statistics.
+     *
+     * @param s initialized SymbolStats object.
+     * @param lis stream to write the encoder info.
+     */
     public AnsEncoder(SymbolStats s, LongOutputStream lis){
         // get mappings and frequencies
         symbolsMapping = s.symbolsMapping;
@@ -65,35 +71,59 @@ public class AnsEncoder {
         os = lis;
     }
 
+    /**
+     * Encode a single element to the state.
+     * This deals with state normalization.
+     *
+     * @param s symbol to encode.
+     */
     public void encode(int s){
         int fs, cs, symIndex;
-        long j, r;
+        long j, r, stateTmp;
         // get freq and cumulative
         symIndex = symbolsMapping.get(s);
         fs = frequencies[symIndex];
         cs = cumulative[symIndex];
         // update the state
         j = Long.divideUnsigned(state, (long)fs);
-        // if state exceeds 32 bits
-        // write on output stream and reset state
         r = Long.remainderUnsigned(state, (long)fs);
-        state = j*M + cs + r;
-        if (Long.compareUnsigned(state, NORM_THS) >= 0) {
+        stateTmp = j*M + cs + r;
+        // if the current state overflows, normalize previous and re-encode,
+        // else assign the new state
+        if (Long.compareUnsigned(stateTmp, NORM_THS) >= 0) {
+            // this resets the state TODO check if computing j and r is necessary
+//            System.out.println("Normalizing");
             normalize();
+            j = Long.divideUnsigned(state, (long)fs);
+            r = Long.remainderUnsigned(state, (long)fs);
+            state = j*M + cs + r;
+        } else {
+            state = stateTmp;
         }
     }
 
+    /**
+     * Reset the state and add it to stateParts.
+     */
     public void normalize() {
 //        System.out.println("Normalization in progress");
         if(Integer.compareUnsigned((int)state, Integer.MAX_VALUE) >= 0){
             System.out.println("STATE IS BIGGER THAN EXPECTED");
         }
+//        System.out.println("ENC: norm, state -> " + state);
         stateParts.add((int)state);
         state = 0L;
         normCount ++;
     }
 
-    public void flush() {
+    /**
+     * Write the encode info on the LongOutputStream, required if you are planning on
+     * rebuild a decoder from this encoder.
+     *
+     * @param flushStreamBuffer decide whether to flush or not the LongOutputStream buffer,
+     *                          false when planning on writing another encoder to the same buffer.
+     */
+    public void flush(boolean flushStreamBuffer) {
         try {
             // we write all the required info to rebuild the decoder
             // number of symbols, symbol mappings, frequencies
@@ -113,23 +143,26 @@ public class AnsEncoder {
 //                System.out.println("ENC - writing next state: " + stateParts.get(i) + " -> " + Long.toBinaryString(stateParts.get(i)));
                 os.writeInt(stateParts.get(i), 31);
             }
-            os.flushBuffer();
+
+            if (flushStreamBuffer)
+                os.flushBuffer();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-
-    public void encodeAll(Iterable<Integer> l){
+    /**
+     * Encode a full list.
+     *
+     * @param l list to encode.
+     */
+    public void encodeAll(int[] l){
         for (Integer e : l)
             encode(e);
         // last normalization required, might be unnecessary
         normalize();
-        // flush the state in reverse order on the stream
-        flush();
     }
-
-
 
     public void debugPrint(){
         System.out.println("---- Symbol mapping --------");
@@ -156,6 +189,10 @@ public class AnsEncoder {
 //        System.out.println();
     }
 
+
+    /**
+     * Print the state and its binary representation.
+     */
     public void printState(){
         double s = (state == 0)? 0 : Math.ceil(Math.log(state));
         System.out.println("ANS state -> " + state + " " + s + " bits");

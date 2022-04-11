@@ -8,56 +8,82 @@ import it.tomfran.thesis.io.LongOutputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.lang.instrument.Instrumentation;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
 
 
 public class AnsTest {
 
+    public static int[] getRandom(int n){
+        int[] choices = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 5, 6, 7, 8, 9, 10};
+        int[] l = new int[n];
+        Random rand = new Random();
+        for (int i = 0; i < n; i++)
+            l[i] = choices[Integer.max(0,(rand.nextInt()%choices.length))];
+        return l;
+    }
+
+    public static int[] reversed(int[] arr){
+        int n = arr.length;
+        int[] ret = new int[n];
+
+        for (int i = 0; i < n; i++)
+            ret[i] = arr[n-1-i];
+
+        return ret;
+    }
+
     public static void main(String[] args) {
 
-        int[] choices = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 5, 6, 7, 8, 9, 10};
+        // generate two random lists
+        int[] l1 = getRandom(100);
+        int[] l2 = getRandom(200);
 
-        ArrayList<Integer> l = new ArrayList<>();
+        // compute stats for these two
+        SymbolStats s1 = new SymbolStats(l1, 10);
+        SymbolStats s2 = new SymbolStats(l2, 10);
 
-        Random rand = new Random();
-        int NUM_INT = 100000;
-        while ((NUM_INT --) != 0)
-            l.add(choices[Integer.max(0,(rand.nextInt()%choices.length))]);
-
-        System.out.println(l.size());
-
-        System.out.println("### ENCODER ###");
+        // create an output stream for the two decoders
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         LongOutputStream los = new LongOutputStream(os);
+        AnsEncoder ans1 = new AnsEncoder(s1, los);
 
-        SymbolStats s = new SymbolStats(l, 10);
-        AnsEncoder ans = new AnsEncoder(s, los);
-        ans.debugPrint();
-        Collections.reverse(l);
-        ans.encodeAll(l);
-        Collections.reverse(l);
-        System.out.println("OK");
+        ans1.debugPrint();
+
+        // encode first list FALSE TO AVOID FLUSH
+        System.out.println("First list len " + l1.length);
+        ans1.encodeAll(reversed(l1));
+        ans1.flush(false);
+        System.out.println("Encoded first list");
+
+        // encode second list
+        AnsEncoder ans2 = new AnsEncoder(s2, los);
+        ans2.encodeAll(reversed(l2));
+        ans2.flush(true);
+        System.out.println("Encoded second list");
 
 
-        System.out.println("\n\n### DECODER ###");
+        // build input stream
         ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
         LongInputStream lis = new LongInputStream(is);
 
-        AnsDecoder ansd = new AnsDecoder(lis);
+        // decode first
+        AnsDecoder ansd1 = new AnsDecoder(lis);
         int i = 0;
-        for (int e : ansd.decodeAll()) {
-            if (e != l.get(i)) {
-                System.out.println("\tWRONG: " + i + " GOT: " + e + " EXP: " + l.get(i));
-            }
+        for (int e : ansd1.decodeAll()){
+            if (e != l1[i])
+                System.err.println("List 1 Wrong decode, got " + e + " expected " + l1[i]);
             i++;
         }
-        System.out.println();
+        System.out.println("Decoded first list of " + i + " elements");
 
-        System.out.println("OK");
+        AnsDecoder ansd2 = new AnsDecoder(lis);
+        i = 0;
+        for (int e : ansd2.decodeAll()){
+            if (e != l2[i])
+                System.err.println("List 2 Wrong decode, got " + e + " expected " + l2[i]);
+            i++;
+        }
+        System.out.println("Decoded second list of " + i + " elements");
 
     }
 
