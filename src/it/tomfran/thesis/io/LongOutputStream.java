@@ -17,12 +17,10 @@ public class LongOutputStream {
 
     public void writeInt(int n, int len) throws IOException {
 
-//        System.out.println("Received to write: " + n);
         // if free can hold len, extract len bits from n,
         // write them at the top of the buffer
         n = n & ((1 << (len)) - 1);
         long k = n;
-//        System.out.println("Binary representation: " + Long.toBinaryString(k));
 
         if (len <= free) {
             free -= len;
@@ -41,7 +39,6 @@ public class LongOutputStream {
 
     public void flushBuffer() throws IOException {
         // write the buffer in block of 8 bits
-        // debugPrint();
         free = 64;
         for (int i = 56; i >= 0; i -= 8) {
             os.write((byte) (buffer >>> i));

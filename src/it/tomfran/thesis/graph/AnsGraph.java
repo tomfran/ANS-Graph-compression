@@ -1,58 +1,61 @@
 package it.tomfran.thesis.graph;
 
+import it.tomfran.thesis.ans.AnsDecoder;
 import it.tomfran.thesis.ans.AnsEncoder;
 import it.tomfran.thesis.ans.SymbolStats;
+import it.tomfran.thesis.io.LongInputStream;
 import it.tomfran.thesis.io.LongOutputStream;
 import it.unimi.dsi.webgraph.ImmutableGraph;
 import it.unimi.dsi.webgraph.LazyIntIterator;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AnsGraph extends ImmutableGraph {
 
     protected int numNodes;
     protected int[] outdegree;
-    protected AnsEncoder[] nodeEncoder;
+    protected AnsDecoder[] nodeDecoder;
+    public static final String GRAPH_EXTENSION = ".graph";
 
-    public static void store(ImmutableGraph g) {
-
-        // for each node, get his successors array,
-        // compute stats, compute encode with ans, flush and to buffer
+    public static void store(ImmutableGraph g, CharSequence basename) throws IOException {
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         LongOutputStream los = new LongOutputStream(os);
 
         // for each node, get the outdegree and put it on the stream
-        // get his successors, order (?),
-        // encode the list reversed, by gap,
-        // flush the encoder to the stream with encodeAll(list, false),
-        // apart from the last.
+        // get his successors,
+        // encode the list reversed by gap,
+        // flush the encoder to the stream,
+        // avoid flushing stream buffer until last encoding.
         int nodes = g.numNodes();
 
-        try {
-            los.writeInt(nodes, 31);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        los.writeInt(nodes, 31);
 
+        int outdegree;
         for (int i = 0; i < nodes; i++) {
-            int[] succ = g.successorArray(i);
-            if (succ.length == 0)
+            outdegree = g.outdegree(i);
+            los.writeInt(outdegree, 31);
+            if (outdegree == 0)
                 continue;
-            computeGaps(succ);
-            SymbolStats s = new SymbolStats(succ, 3);
+            int[] succ = g.successorArray(i);
+            computeGaps(succ, outdegree);
+            SymbolStats s = new SymbolStats(succ, outdegree, 10);
             AnsEncoder ans = new AnsEncoder(s, los);
-            ans.encodeAll(succ);
+            ans.encodeAll(succ, outdegree);
             ans.flush((i == (nodes-1)));
         }
 
-        System.out.println("Encoded");
-
+        Files.write(Paths.get(basename + GRAPH_EXTENSION), os.toByteArray());
     }
 
-    private static void computeGaps(int[] arr){
-        int n = arr.length;
+    private static void computeGaps(int[] arr, int length){
+        int n = length;
         int tmp;
         // compute gaps
         for (int i = n-1; i >= 1; i--) {
@@ -66,17 +69,49 @@ public class AnsGraph extends ImmutableGraph {
         }
     }
 
+    public static AnsGraph load(CharSequence basename) throws IOException {
+        return new AnsGraph().loadInternal(basename);
+    }
+
+    protected AnsGraph loadInternal(CharSequence basename) throws IOException {
+        byte[] fileContent = Files.readAllBytes(Paths.get(basename + GRAPH_EXTENSION));
+        ByteArrayInputStream is = new ByteArrayInputStream(fileContent);
+        LongInputStream lis = new LongInputStream(is);
+
+        AnsGraph g = new AnsGraph();
+        int nodes = lis.readInt(31);
+        g.numNodes = nodes;
+        g.outdegree = new int[nodes];
+        g.nodeDecoder = new AnsDecoder[nodes];
+
+        for (int i = 0; i < nodes; i++) {
+            g.outdegree[i] = lis.readInt(31);
+            if (g.outdegree[i] != 0)
+                g.nodeDecoder[i] = new AnsDecoder(lis);
+        }
+
+        return g;
+
+    }
+
     public LazyIntIterator successors(int node) {
         return null;
     }
 
     public int[] successorsArray(int node) {
-        return null;
+        if (nodeDecoder[node] == null){
+            return new int[]{-1};
+        }
+        List<Integer> succ = nodeDecoder[node].decodeAll();
+        int[] ret = succ.stream().mapToInt(Integer::intValue).toArray();
+        for (int i = 1; i < outdegree(node); i++)
+            ret[i] += ret[i-1];
+        return ret;
     }
 
     @Override
     public int numNodes() {
-        return 0;
+        return numNodes;
     }
 
     @Override
@@ -86,7 +121,7 @@ public class AnsGraph extends ImmutableGraph {
 
     @Override
     public int outdegree(int i) {
-        return 0;
+        return outdegree[i];
     }
 
     @Override

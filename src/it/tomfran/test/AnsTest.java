@@ -8,6 +8,7 @@ import it.tomfran.thesis.io.LongOutputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Random;
 
 
@@ -39,8 +40,8 @@ public class AnsTest {
         int[] l2 = getRandom(200);
 
         // compute stats for these two
-        SymbolStats s1 = new SymbolStats(l1, 10);
-        SymbolStats s2 = new SymbolStats(l2, 10);
+        SymbolStats s1 = new SymbolStats(l1, 100, 10);
+        SymbolStats s2 = new SymbolStats(l2, 200, 10);
 
         // create an output stream for the two decoders
         ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -49,17 +50,18 @@ public class AnsTest {
 
         ans1.debugPrint();
 
-        // encode first list FALSE TO AVOID FLUSH
-        System.out.println("First list len " + l1.length);
-        ans1.encodeAll(reversed(l1));
-        ans1.flush(false);
-        System.out.println("Encoded first list");
+        try {
+            // encode first list FALSE TO AVOID FLUSH
+            System.out.println("First list len " + l1.length);
+            ans1.encodeAll(reversed(l1), 100);
+            ans1.flush(false);
+            System.out.println("Encoded first list");
 
-        // encode second list
-        AnsEncoder ans2 = new AnsEncoder(s2, los);
-        ans2.encodeAll(reversed(l2));
-        ans2.flush(true);
-        System.out.println("Encoded second list");
+            // encode second list
+            AnsEncoder ans2 = new AnsEncoder(s2, los);
+            ans2.encodeAll(reversed(l2), 200);
+            ans2.flush(true);
+            System.out.println("Encoded second list");
 
 
         // build input stream
@@ -85,6 +87,9 @@ public class AnsTest {
         }
         System.out.println("Decoded second list of " + i + " elements");
 
+        } catch (IOException e){
+            e.printStackTrace();
+        }
     }
 
 }

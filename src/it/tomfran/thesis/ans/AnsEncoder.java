@@ -9,29 +9,30 @@ import java.util.Map.Entry;
 
 public class AnsEncoder {
 
-    /** Sum of frequencies: might change it to a power of two and approximate */
+    /** Sum of frequencies, usually a power of two. */
     protected int M;
-    /** Number of symbols */
+    /** Number of symbols. */
     protected int N;
-    /** Symbols to index mapping */
+    /** Symbols to index mapping. */
     protected HashMap<Integer, Integer> symbolsMapping;
-    /** Index to symbols mapping */
+    /** Index to symbols mapping. */
     protected HashMap<Integer, Integer> invSymbolsMapping;
-    /** Symbol frequencies */
+    /** Symbol frequencies. */
     protected int[] frequencies;
-    /** Cumulative array */
+    /** Cumulative array. */
     protected int[] cumulative;
-    /** Symbol array */
+    /** Symbols array. */
     protected int[] sym;
-    /* encoder state */
-    protected long state;
-    /** Stream to write overflows */
+    /** Stream to write overflows. */
     protected LongOutputStream os;
-    /** Normalization threshold, 2^32  */
+
+    /** Normalization threshold.  */
     protected final long NORM_THS = (1L << 31);
-    /** Number of normalizations, required to rebuild the encoder */
+    /** Number of normalizations. */
     protected int normCount;
-    /** Arraylist of intermediate states, required to write them reversed*/
+    /* Current encoder state. */
+    protected long state;
+    /** List of intermediate states. */
     protected ArrayList<Integer> stateParts;
 
     /**
@@ -91,8 +92,7 @@ public class AnsEncoder {
         // if the current state overflows, normalize previous and re-encode,
         // else assign the new state
         if (Long.compareUnsigned(stateTmp, NORM_THS) >= 0) {
-            // this resets the state TODO check if computing j and r is necessary
-//            System.out.println("Normalizing");
+            // this resets the state\
             normalize();
             j = Long.divideUnsigned(state, (long)fs);
             r = Long.remainderUnsigned(state, (long)fs);
@@ -106,50 +106,45 @@ public class AnsEncoder {
      * Reset the state and add it to stateParts.
      */
     public void normalize() {
-//        System.out.println("Normalization in progress");
+        // System.out.println("Normalization in progress");
         if(Integer.compareUnsigned((int)state, Integer.MAX_VALUE) >= 0){
             System.out.println("STATE IS BIGGER THAN EXPECTED");
         }
-//        System.out.println("ENC: norm, state -> " + state);
+        // System.out.println("ENC: norm, state -> " + state);
         stateParts.add((int)state);
         state = 0L;
         normCount ++;
     }
 
     /**
-     * Write the encode info on the LongOutputStream, required if you are planning on
+     * Write the encoder info on the LongOutputStream, required if you are planning on
      * rebuild a decoder from this encoder.
      *
      * @param flushStreamBuffer decide whether to flush or not the LongOutputStream buffer,
      *                          false when planning on writing another encoder to the same buffer.
      */
-    public void flush(boolean flushStreamBuffer) {
-        try {
-            // we write all the required info to rebuild the decoder
-            // number of symbols, symbol mappings, frequencies
-            // M, cumulative and sym array will be built by the decoder
-            os.writeInt(N, 31);
-            for (Entry<Integer, Integer> e : symbolsMapping.entrySet()) {
-                os.writeInt(e.getKey(), 31);
-                os.writeInt(e.getValue(), 31);
-            }
-            for (int e : frequencies)
-                os.writeInt(e, 31);
-
-            // write the number of intermediate states
-            // then the state parts in reversed order
-            os.writeInt(normCount, 31);
-            for (int i = normCount-1; i >= 0; i--) {
-//                System.out.println("ENC - writing next state: " + stateParts.get(i) + " -> " + Long.toBinaryString(stateParts.get(i)));
-                os.writeInt(stateParts.get(i), 31);
-            }
-
-            if (flushStreamBuffer)
-                os.flushBuffer();
-
-        } catch (IOException e) {
-            e.printStackTrace();
+    public void flush(boolean flushStreamBuffer) throws IOException {
+        // we write all the required info to rebuild the decoder
+        // number of symbols, symbol mappings, frequencies.
+        // M, cumulative and sym array are build by the decoder
+        os.writeInt(N, 31);
+        for (Entry<Integer, Integer> e : symbolsMapping.entrySet()) {
+            os.writeInt(e.getKey(), 31);
+            os.writeInt(e.getValue(), 31);
         }
+        for (int e : frequencies)
+            os.writeInt(e, 31);
+
+        // write the number of intermediate states
+        // then the state parts in reversed order
+        os.writeInt(normCount, 31);
+        for (int i = normCount-1; i >= 0; i--) {
+            //System.out.println("ENC - writing next state: " + stateParts.get(i) + " -> " + Long.toBinaryString(stateParts.get(i)));
+            os.writeInt(stateParts.get(i), 31);
+        }
+        // flush buffer if set
+        if (flushStreamBuffer)
+            os.flushBuffer();
     }
 
     /**
@@ -157,13 +152,17 @@ public class AnsEncoder {
      *
      * @param l list to encode.
      */
-    public void encodeAll(int[] l){
-        for (Integer e : l)
-            encode(e);
-        // last normalization required, might be unnecessary
+    public void encodeAll(int[] l, int length){
+        for (int i = 0; i < length; i++)
+            encode(l[i]);
+        // last normalization to append the last state
         normalize();
     }
 
+
+    /**
+     * Print encoder info.
+     */
     public void debugPrint(){
         System.out.println("---- Symbol mapping --------");
         for (Entry<Integer, Integer> e : symbolsMapping.entrySet())
@@ -182,11 +181,6 @@ public class AnsEncoder {
         for (int i = 0; i < N; i++)
             System.out.print(cumulative[i] + " ");
         System.out.println();
-
-//        System.out.println("---- Sym array -------------");
-//        for (int i = 0; i < M+1; i++)
-//            System.out.print(sym[i] + " ");
-//        System.out.println();
     }
 
 

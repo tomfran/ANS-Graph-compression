@@ -3,25 +3,34 @@ package it.tomfran.thesis.ans;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 public class SymbolStats {
 
+    /** Array length. */
+    private int length;
+    /** Array to scan. */
     protected int[] iterator;
+    /** Symbol to index mapping. */
     protected HashMap<Integer, Integer> symbolsMapping;
+    /** Index to symbol mapping. */
     protected HashMap<Integer, Integer> invSymbolsMapping;
+    /** Ordered symbol frequencies. */
     protected int[] frequencies;
+    /** Sum of frequencies. */
     protected int total;
+    /** Power of two to approximate frequencies. */
     protected int precision;
 
     /**
-     * Build symbol statistics from an Integer Iterable.
+     * Build symbols statistics from an int array.
      *
-     * @param iterator iterable with Integers.
-     * @param d probability approximation precision.
+     * @param iterator array to scan.
+     * @param length length of the array.
+     * @param d power of two to approximate probabilities.
      */
-    public SymbolStats(int[] iterator, int d) {
+    public SymbolStats(int[] iterator, int length, int d) {
         this.iterator = iterator;
+        this.length = length;
         precision = 2 << d;
         buildFrequencies();
     }
@@ -30,8 +39,8 @@ public class SymbolStats {
         // count element frequencies
         int totalTmp = 0;
         HashMap<Integer, Integer> freqMap = new HashMap<>();
-        for (int element : iterator) {
-            freqMap.put(element, freqMap.getOrDefault(element, 0) + 1);
+        for (int i = 0; i < length; i++) {
+            freqMap.put(iterator[i], freqMap.getOrDefault(iterator[i], 0) + 1);
             totalTmp ++;
         }
         // sort elements by value
