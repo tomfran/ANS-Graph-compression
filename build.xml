@@ -1,16 +1,13 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-<project xmlns:ivy="antlib:org.apache.ivy.ant" >
-=======
+
 <project xmlns:ivy="antlib:org.apache.ivy.ant" name="hello-ivy" >
 <!--<project name="ans-graph-compression" default="jar" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:artifact="antlib:org.apache.maven.artifact.ant">-->
     <!-- =================================
           target: resolve
          ================================= -->
->>>>>>> Ivy setup
-=======
-<project xmlns:ivy="antlib:org.apache.ivy.ant" >
->>>>>>> Packages and Ivy setup
+<!--&gt;>>>>>> Ivy setup-->
+<!--=======-->
+<!--<project xmlns:ivy="antlib:org.apache.ivy.ant" >-->
+<!--&gt;>>>>>> ?Packages and Ivy setup-->
     <target name="resolve" description="--> retrieve dependencies with Ivy">
         <ivy:retrieve/>
     </target>

@@ -92,6 +92,11 @@ public class AnsDecoder {
             stateList[i] = readNextState();
     }
 
+    private int readNextState() throws IOException {
+        int ret = is.readInt(31);
+        return ret;
+    }
+
     /**
      * Decode the encoded sequence from the state.
      *
@@ -99,16 +104,10 @@ public class AnsDecoder {
      */
     public List<Integer> decodeAll(){
         ArrayList<Integer> ret = new ArrayList<>();
-        for (int i = 0; i < stateCount; i++) {
-            while(Long.compareUnsigned(stateList[stateIndex], 0L) > 0)
-                ret.add(decode());
-            stateIndex ++;
-        }
-        return ret;
-    }
+        int e;
+        while ((e = decode()) != -1)
+            ret.add(e);
 
-    private int readNextState() throws IOException {
-        int ret = is.readInt(31);
         return ret;
     }
 
@@ -118,11 +117,14 @@ public class AnsDecoder {
      * @return decoded integer.
      */
     public int decode(){
+//        System.out.println("State Index: " + stateIndex);
+//
+//        System.out.println("State count: " + stateCount);
+        // if last state is reached, return -1
+        if (stateIndex == stateCount) return -1;
+
         int fs, cs, r, symIndex, state, j;
         state = stateList[stateIndex];
-        if (Integer.compareUnsigned(state, 0) == 0)
-            return -1;
-
         // remainder to identity symbol
         r = (int) (1 + (Long.remainderUnsigned(state-1, M)));
         // get freq and cumulative
@@ -132,6 +134,10 @@ public class AnsDecoder {
         // update the state
         j = Integer.divideUnsigned(state-r, M);
         stateList[stateIndex] = j * fs - cs + r;
+
+        // if current state is over, change to next one
+        if (Long.compareUnsigned(stateList[stateIndex], 0L) == 0)
+            stateIndex++;
 
         return invSymbolsMapping.get(symIndex);
     }
@@ -157,6 +163,13 @@ public class AnsDecoder {
         System.out.println("---- Cumulative ------------");
         for (int i = 0; i < N; i++)
             System.out.print(cumulative[i] + " ");
+        System.out.println();
+
+        System.out.println("---- States ----------------");
+        for (int i = 0; i < stateCount; i++) {
+            System.out.println(stateList[i]);
+        }
+        System.out.println("Current state count: " + stateCount);
         System.out.println();
     }
 

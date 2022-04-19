@@ -64,29 +64,35 @@ public class AnsTest {
             System.out.println("Encoded second list");
 
 
-        // build input stream
-        ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
-        LongInputStream lis = new LongInputStream(is);
+            // build input stream
+            ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
+            LongInputStream lis = new LongInputStream(is);
 
-        // decode first
-        AnsDecoder ansd1 = new AnsDecoder(lis);
-        int i = 0;
-        for (int e : ansd1.decodeAll()){
-            if (e != l1[i])
-                System.err.println("List 1 Wrong decode, got " + e + " expected " + l1[i]);
-            i++;
-        }
-        System.out.println("Decoded first list of " + i + " elements");
+            // decode first
+            AnsDecoder ansd1 = new AnsDecoder(lis);
+            int i = 0;
+            int e;
+            do {
+                e = ansd1.decode();
+                if (e == -1)
+                    System.out.println("Finished decoding, total: " + i);
+                else if (e != l1[i]) {
+                    System.out.println("List 1 Wrong decode, got " + e + " expected " + l1[i]);
+                }
+                i++;
+            } while (e != -1);
+            System.out.println("Decoded first list of " + i + " elements");
+//            System.exit(0);
 
-        AnsDecoder ansd2 = new AnsDecoder(lis);
-        i = 0;
-        for (int e : ansd2.decodeAll()){
-            if (e != l2[i])
-                System.err.println("List 2 Wrong decode, got " + e + " expected " + l2[i]);
-            i++;
-        }
-        System.out.println("Decoded second list of " + i + " elements");
+            AnsDecoder ansd2 = new AnsDecoder(lis);
+            i = 0;
 
+            for (int d : ansd2.decodeAll()){
+                if (d != l2[i])
+                    System.err.println("List 2 Wrong decode, got " + d + " expected " + l2[i]);
+                i++;
+            }
+            System.out.println("Decoded second list of " + i + " elements");
         } catch (IOException e){
             e.printStackTrace();
         }

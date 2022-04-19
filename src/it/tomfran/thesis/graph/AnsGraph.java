@@ -13,7 +13,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 public class AnsGraph extends ImmutableGraph {
@@ -95,13 +94,14 @@ public class AnsGraph extends ImmutableGraph {
     }
 
     public LazyIntIterator successors(int node) {
-        return null;
+        return new AnsSuccessorsReader(outdegree[node], nodeDecoder[node]);
     }
 
     public int[] successorsArray(int node) {
         if (nodeDecoder[node] == null){
             return new int[]{-1};
         }
+
         List<Integer> succ = nodeDecoder[node].decodeAll();
         int[] ret = succ.stream().mapToInt(Integer::intValue).toArray();
         for (int i = 1; i < outdegree(node); i++)

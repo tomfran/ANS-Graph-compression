@@ -2,12 +2,11 @@ package it.tomfran.test;
 
 import it.tomfran.thesis.graph.AnsGraph;
 import it.unimi.dsi.webgraph.BVGraph;
-import it.unimi.dsi.webgraph.EFGraph;
 import it.unimi.dsi.webgraph.ImmutableGraph;
-
 import java.io.IOException;
 
-public class WebGraphTest {
+public class AnsGraphTest {
+
 
     public static void main(String[] args) {
         ImmutableGraph g;
@@ -56,5 +55,4 @@ public class WebGraphTest {
         }
 
     }
-
 }
