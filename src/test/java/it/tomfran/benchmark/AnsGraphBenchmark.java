@@ -1,0 +1,48 @@
+package it.tomfran.benchmark;
+
+import it.tomfran.thesis.graph.AnsGraph;
+import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.Options;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
+
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.MILLISECONDS)
+//@Fork(value = 3, jvmArgsAppend = {"-XX:+UseParallelGC", "-Xms1g", "-Xmx1g"})
+@Fork(value = 1)
+@BenchmarkMode(org.openjdk.jmh.annotations.Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@State(org.openjdk.jmh.annotations.Scope.Benchmark)
+public class AnsGraphBenchmark {
+
+    CharSequence basename = "data/ans-uk";
+    AnsGraph ag;
+
+    @Setup
+    public void setup(){
+        try {
+            ag = AnsGraph.load(basename);
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Benchmark
+    public int outdegree(){
+        return ag.outdegree(10);
+    }
+
+    public static void main(String[] args) throws RunnerException {
+        Options opt = new OptionsBuilder()
+                .include(AnsGraphBenchmark.class.getSimpleName()).build();
+
+        new Runner(opt).run();
+    }
+
+
+}

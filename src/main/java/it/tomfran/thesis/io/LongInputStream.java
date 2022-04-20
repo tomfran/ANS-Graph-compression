@@ -1,6 +1,5 @@
 package it.tomfran.thesis.io;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 

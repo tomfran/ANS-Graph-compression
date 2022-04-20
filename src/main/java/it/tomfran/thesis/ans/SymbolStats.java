@@ -3,6 +3,7 @@ package it.tomfran.thesis.ans;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 public class SymbolStats {
 
@@ -46,7 +47,7 @@ public class SymbolStats {
         // sort elements by value
         List<Entry<Integer, Integer>> sorted = freqMap.entrySet().stream().sorted(
                 (Entry<Integer, Integer> a, Entry<Integer, Integer> b) -> Integer.compare(b.getValue(),
-                        a.getValue())).toList();
+                        a.getValue())).collect(Collectors.toList());
 
         // build symbols mappings
         symbolsMapping = new HashMap<Integer, Integer>();

@@ -1,0 +1,4 @@
+rootProject.name = 'Ans-Graph-Compression'
+include 'src:jmh'
+findProject(':src:jmh')?.name = 'jmh'
+

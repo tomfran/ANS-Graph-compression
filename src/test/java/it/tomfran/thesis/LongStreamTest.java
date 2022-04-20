@@ -1,12 +1,17 @@
-package it.tomfran.test;
+package it.tomfran.thesis;
 
 import it.tomfran.thesis.io.LongInputStream;
 import it.tomfran.thesis.io.LongOutputStream;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 public class LongStreamTest {
-    public static void main(String[] args) {
+
+    @Test
+    public void readWrite() {
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         LongOutputStream los = new LongOutputStream(os);

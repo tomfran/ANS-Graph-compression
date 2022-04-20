@@ -1,10 +1,11 @@
-package it.tomfran.test;
+package it.tomfran.thesis;
 
 import it.tomfran.thesis.ans.AnsDecoder;
 import it.tomfran.thesis.ans.AnsEncoder;
 import it.tomfran.thesis.ans.SymbolStats;
 import it.tomfran.thesis.io.LongInputStream;
 import it.tomfran.thesis.io.LongOutputStream;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -33,7 +34,8 @@ public class AnsTest {
         return ret;
     }
 
-    public static void main(String[] args) {
+    @Test
+    public void encodeDecode() {
 
         // generate two random lists
         int[] l1 = getRandom(100);

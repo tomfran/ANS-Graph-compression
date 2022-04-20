@@ -1,7 +1,10 @@
 # Idea classes
-/data
+
 /out
-.idea
+/gradle
+/build
+/data
+.gradle
 
 # Compiled class file
 *.class
