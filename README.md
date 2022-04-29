@@ -6,9 +6,12 @@ Graph compression using Asymmetric Numeral Systems.
 [Decoder source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/ans/AnsDecoder.java)
 
 ### Long input and output stream
-[Input Stream source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/io/LongInputStream.java) \
-[Output Stream source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/io/LongOutputStream.java)
+[LongWordBitReader source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/io/LongWordBitReader.java) \
+[LongWordOutputBitStream source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/io/LongWordOutputBitStream.java)
 
 ### ANS Graph
 [Graph source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/graph/AnsGraph.java) \
 [Successors reader source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/graph/AnsSuccessorsReader.java)
+
+### Test
+[Ans graph](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/test/java/it/tomfran/thesis/AnsGraphTest.java)

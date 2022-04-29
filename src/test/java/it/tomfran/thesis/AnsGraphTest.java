@@ -1,79 +1,37 @@
 package it.tomfran.thesis;
 
 import it.tomfran.thesis.graph.AnsGraph;
-import it.unimi.dsi.webgraph.BVGraph;
-import it.unimi.dsi.webgraph.ImmutableGraph;
 import it.unimi.dsi.webgraph.LazyIntIterator;
+import it.unimi.dsi.webgraph.examples.ErdosRenyiGraph;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 public class AnsGraphTest {
 
-
     @Test
-    public void successorsArrayTest() {
-        ImmutableGraph g;
+    public void randomGraphStoreLoad() throws IOException {
+        int n = 30;
+        double e = 0.8;
 
-        try {
-            g = BVGraph.load("data/uk-2007-05@100000");
+        ErdosRenyiGraph g = new ErdosRenyiGraph(n, e);
+        System.out.println(g);
+        String s = "";
+        String filename = "data/random/" + n + "-" + e;
+        AnsGraph.store(g, filename);
 
+        AnsGraph ansg = AnsGraph.load(filename);
 
-            AnsGraph.store(g, "data/ans-uk");
-            AnsGraph ag = AnsGraph.load("data/ans-uk");
-
-            assert (g.numNodes() == ag.numNodes());
-
-            for (int i = 0; i < g.numNodes(); i++)
-                assert (g.outdegree(i) == ag.outdegree(i));
-
-            int[] succ1, succ2;
-            for (int i = 0; i < g.numNodes(); i++) {
-
-                succ1 = g.successorArray(i);
-                succ2 = ag.successorsArray(i);
-
-                for (int j = 0; j < ag.outdegree(i); j++)
-                    assert (succ1[j] == succ2[j]);
+        for (int i = 0; i < n; i++) {
+            System.out.print(String.format("Node: %d, outdegree: %d, modelId: %d, successors: ", i, ansg.outdegree(i), ansg.modelId(i)));
+            LazyIntIterator succ = ansg.successors(i);
+            int edge;
+            while( (edge = succ.nextInt()) != -1){
+                System.out.print(edge + " ");
             }
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println();
         }
 
     }
 
-
-    @Test
-    public void successorsIteratorTest(){
-
-        try {
-            ImmutableGraph g = BVGraph.load("data/uk-2007-05@100000");
-
-//            AnsGraph.store(g, "data/ans-uk");
-            AnsGraph ag = AnsGraph.load("data/ans-uk");
-
-            assert (g.numNodes() == ag.numNodes());
-
-            for (int i = 0; i < g.numNodes(); i++)
-                assert (g.outdegree(i) == ag.outdegree(i));
-
-            int[] succ1, succ2;
-            for (int i = 0; i < g.numNodes(); i++) {
-
-                LazyIntIterator i1 = g.successors(i);
-                LazyIntIterator i2 = ag.successors(i);
-
-                for (int j = 0; j < ag.outdegree(i); j++) {
-                    assert i1.nextInt() == i2.nextInt();
-                }
-                assert i2.nextInt() == -1;
-            }
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 }

@@ -10,9 +10,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.MILLISECONDS)
+@Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.MILLISECONDS)
-//@Fork(value = 3, jvmArgsAppend = {"-XX:+UseParallelGC", "-Xms1g", "-Xmx1g"})
 @Fork(value = 1)
 @BenchmarkMode(org.openjdk.jmh.annotations.Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -23,7 +22,7 @@ public class AnsGraphBenchmark {
     AnsGraph ag;
 
     @Setup
-    public void setup(){
+    public void setup() {
         try {
             ag = AnsGraph.load(basename);
 
@@ -33,9 +32,10 @@ public class AnsGraphBenchmark {
     }
 
     @Benchmark
-    public int outdegree(){
+    public int outdegree() {
         return ag.outdegree(10);
     }
+
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
