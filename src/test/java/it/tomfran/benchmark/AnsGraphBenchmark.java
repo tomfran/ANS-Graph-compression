@@ -1,6 +1,7 @@
 package it.tomfran.benchmark;
 
 import it.tomfran.thesis.graph.AnsGraph;
+import it.unimi.dsi.webgraph.LazyIntIterator;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
@@ -10,9 +11,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.MILLISECONDS)
+@Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.MILLISECONDS)
-//@Fork(value = 3, jvmArgsAppend = {"-XX:+UseParallelGC", "-Xms1g", "-Xmx1g"})
 @Fork(value = 1)
 @BenchmarkMode(org.openjdk.jmh.annotations.Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -33,8 +33,19 @@ public class AnsGraphBenchmark {
     }
 
     @Benchmark
-    public int outdegree(){
+    public int outdegree() {
         return ag.outdegree(10);
+    }
+
+//    @Benchmark
+    public int successors() {
+        int node = 10;
+        int a = 0;
+        LazyIntIterator it = ag.successors(node);
+        for (int i = 0; i < ag.outdegree(node); i++) {
+            a = it.nextInt();
+        }
+        return a;
     }
 
     public static void main(String[] args) throws RunnerException {

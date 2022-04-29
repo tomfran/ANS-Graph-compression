@@ -19,7 +19,7 @@ public class AnsGraphTest {
             g = BVGraph.load("data/uk-2007-05@100000");
 
 
-            AnsGraph.store(g, "data/ans-uk");
+            AnsGraph.store(g, "data/ans-uk_2");
             AnsGraph ag = AnsGraph.load("data/ans-uk");
 
             assert (g.numNodes() == ag.numNodes());
@@ -54,22 +54,29 @@ public class AnsGraphTest {
 //            AnsGraph.store(g, "data/ans-uk");
             AnsGraph ag = AnsGraph.load("data/ans-uk");
 
-            assert (g.numNodes() == ag.numNodes());
-
-            for (int i = 0; i < g.numNodes(); i++)
-                assert (g.outdegree(i) == ag.outdegree(i));
-
-            int[] succ1, succ2;
-            for (int i = 0; i < g.numNodes(); i++) {
-
-                LazyIntIterator i1 = g.successors(i);
-                LazyIntIterator i2 = ag.successors(i);
-
-                for (int j = 0; j < ag.outdegree(i); j++) {
-                    assert i1.nextInt() == i2.nextInt();
-                }
-                assert i2.nextInt() == -1;
+            LazyIntIterator i1 = ag.successors(10);
+            for (int i = 0; i < ag.outdegree(10); i++) {
+                System.out.print(i1.nextInt() + " ");
             }
+            System.out.println();
+
+//
+//            assert (g.numNodes() == ag.numNodes());
+//
+//            for (int i = 0; i < g.numNodes(); i++)
+//                assert (g.outdegree(i) == ag.outdegree(i));
+//
+//            int[] succ1, succ2;
+//            for (int i = 0; i < g.numNodes(); i++) {
+//
+//                LazyIntIterator i1 = g.successors(i);
+//                LazyIntIterator i2 = ag.successors(i);
+//
+//                for (int j = 0; j < ag.outdegree(i); j++) {
+//                    assert i1.nextInt() == i2.nextInt();
+//                }
+//                assert i2.nextInt() == -1;
+//            }
 
 
         } catch (IOException e) {

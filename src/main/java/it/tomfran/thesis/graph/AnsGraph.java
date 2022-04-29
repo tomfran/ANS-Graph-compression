@@ -98,15 +98,7 @@ public class AnsGraph extends ImmutableGraph {
     }
 
     public int[] successorsArray(int node) {
-        if (nodeDecoder[node] == null){
-            return new int[]{-1};
-        }
-
-        List<Integer> succ = nodeDecoder[node].decodeAll();
-        int[] ret = succ.stream().mapToInt(Integer::intValue).toArray();
-        for (int i = 1; i < outdegree(node); i++)
-            ret[i] += ret[i-1];
-        return ret;
+        return super.successorArray(node);
     }
 
     @Override
