@@ -23,7 +23,7 @@ public class AnsGraphBenchmark {
     AnsGraph ag;
 
     @Setup
-    public void setup(){
+    public void setup() {
         try {
             ag = AnsGraph.load(basename);
 
@@ -35,17 +35,6 @@ public class AnsGraphBenchmark {
     @Benchmark
     public int outdegree() {
         return ag.outdegree(10);
-    }
-
-//    @Benchmark
-    public int successors() {
-        int node = 10;
-        int a = 0;
-        LazyIntIterator it = ag.successors(node);
-        for (int i = 0; i < ag.outdegree(node); i++) {
-            a = it.nextInt();
-        }
-        return a;
     }
 
     public static void main(String[] args) throws RunnerException {
