@@ -29,7 +29,7 @@ import static java.lang.Math.max;
 
 public class AnsGraph extends ImmutableGraph {
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     private static final boolean ANS_DEBUG = false;
 
 
@@ -61,12 +61,13 @@ public class AnsGraph extends ImmutableGraph {
     private final static class OffsetsLongIterator implements LongIterator {
         private final InputBitStream offsetIbs;
         private final long n;
-        //        private long offset;
+        private long offset;
         private long i;
 
         private OffsetsLongIterator(final InputBitStream offsetIbs, final long n) {
             this.offsetIbs = offsetIbs;
             this.n = n;
+            offset = 0;
         }
 
         @Override
@@ -79,8 +80,8 @@ public class AnsGraph extends ImmutableGraph {
             if (!hasNext()) throw new NoSuchElementException();
             i++;
             try {
-//                return offset += offsetIbs.readLongDelta();
-                return offsetIbs.readLongDelta();
+                return offset += offsetIbs.readLongDelta();
+//                return offsetIbs.readLongDelta();
 
             } catch (final IOException e) {
                 throw new RuntimeException(e);
@@ -123,10 +124,12 @@ public class AnsGraph extends ImmutableGraph {
             System.out.println("Started Encoding");
         }
         // the model id for now is the index of the node
+        long current = 0;
+        long prev = 0;
         int modelNum = 0;
         for (final NodeIterator nodeIterator = graph.nodeIterator(); nodeIterator.hasNext(); ) {
             if (DEBUG) {
-                if ((i++ % 10000) == 0)
+                if ((i++ % 100000) == 0)
                     System.out.println("Node num: " + i);
             }
             nodeIterator.nextInt();
@@ -157,7 +160,9 @@ public class AnsGraph extends ImmutableGraph {
 
             }
             // write offsets
-            offsets.writeLongDelta(outdegreeBits + stateBits);
+            current = outdegreeBits + stateBits;
+            offsets.writeLongDelta(current - prev);
+            prev = outdegreeBits + stateBits;
         }
 
         graphStream.close();
