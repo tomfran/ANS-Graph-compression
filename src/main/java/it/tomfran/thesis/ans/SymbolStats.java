@@ -8,33 +8,19 @@ import java.util.stream.Collectors;
 
 public class SymbolStats {
 
-    /**
-     * Array length.
-     */
+    /** Array length. */
     private final int length;
-    /**
-     * Array to scan.
-     */
+    /** Array to scan. */
     protected int[] iterator;
-    /**
-     * Symbol to index mapping.
-     */
+    /** Symbol to index mapping. */
     protected Int2IntOpenHashMap symbolsMapping;
-    /**
-     * Index to symbol mapping.
-     */
+    /** Index to symbol mapping. */
     protected Int2IntOpenHashMap invSymbolsMapping;
-    /**
-     * Ordered symbol frequencies.
-     */
+    /** Ordered symbol frequencies. */
     protected int[] frequencies;
-    /**
-     * Sum of frequencies.
-     */
+    /** Sum of frequencies. */
     protected int total;
-    /**
-     * Power of two to approximate frequencies.
-     */
+    /** Power of two to approximate frequencies. */
     protected int precision;
 
     /**

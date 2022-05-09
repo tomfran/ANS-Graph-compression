@@ -5,11 +5,22 @@ import it.unimi.dsi.fastutil.longs.LongArrayList;
 
 public class AnsDecoder {
 
+    /** Model used by the decoder. */
     protected AnsModel model;
+    /** Number of states to decode. */
     protected int stateCount;
+    /** List of states. */
     protected LongArrayList stateList;
+    /** index of the current state. */
     protected int stateIndex;
 
+    /**
+     * Build a decoder starting from a model, a state list and a state count.
+     *
+     * @param m AnsModel to use.
+     * @param sl State list.
+     * @param sc Number of states.
+     */
     public AnsDecoder(AnsModel m, LongArrayList sl, int sc) {
         model = m;
         stateIndex = 0;
@@ -17,6 +28,11 @@ public class AnsDecoder {
         stateCount = sc;
     }
 
+    /**
+     * Decode all encoded ints.
+     *
+     * @return IntArrayList with the decoded sequence.
+     */
     public IntArrayList decodeAll() {
         IntArrayList ret = new IntArrayList();
         int e;
@@ -26,6 +42,11 @@ public class AnsDecoder {
         return ret;
     }
 
+    /**
+     * Decode a single int from the state list.
+     *
+     * @return Decoded int.
+     */
     public int decode() {
 
         if (stateIndex == stateCount) return -1;

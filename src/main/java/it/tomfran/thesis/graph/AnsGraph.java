@@ -5,10 +5,11 @@ import it.tomfran.thesis.ans.AnsModel;
 import it.tomfran.thesis.ans.SymbolStats;
 import it.tomfran.thesis.io.LongWordBitReader;
 import it.tomfran.thesis.io.LongWordOutputBitStream;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongBigArrayBigList;
+import it.unimi.dsi.fastutil.longs.LongBigList;
+import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.io.InputBitStream;
 import it.unimi.dsi.io.OutputBitStream;
+import it.unimi.dsi.sux4j.util.EliasFanoMonotoneLongBigList;
 import it.unimi.dsi.webgraph.ImmutableGraph;
 import it.unimi.dsi.webgraph.LazyIntIterator;
 import it.unimi.dsi.webgraph.NodeIterator;
@@ -20,6 +21,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.text.DecimalFormat;
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 
 import static it.unimi.dsi.webgraph.EFGraph.loadLongBigList;
@@ -27,20 +29,72 @@ import static java.lang.Math.max;
 
 public class AnsGraph extends ImmutableGraph {
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     private static final boolean ANS_DEBUG = false;
+
 
     public static final String GRAPH_EXTENSION = ".graph";
     public static final String OFFSETS_EXTENSION = ".offset";
     public static final String MODEL_EXTENSION = ".model";
     public static final String PROPERTIES_EXTENSION = ".properties";
 
+    /** Number of nodes. */
     protected int numNodes;
+    /** Array with the And models used in the graph. */
     protected AnsModel[] ansModels;
-    public LongArrayList offsets;
-    protected LongBigArrayBigList graph;
+    /** Elias fano sequence for the offsets. */
+    public LongBigList offsets;
+    /** Long big list containing the ecnoded graph. */
+    protected LongBigList graph;
+    /** LongWordBitReader to read outdegrees. */
     protected LongWordBitReader outdegreeLongWordBitReader;
 
+    public AnsGraph(int numNodes, AnsModel[] ansModels, LongBigList offsets, LongBigList graph, LongWordBitReader outdegreeLongWordBitReader) {
+        this.numNodes = numNodes;
+        this.ansModels = ansModels;
+        this.offsets = offsets;
+        this.graph = graph;
+        this.outdegreeLongWordBitReader = outdegreeLongWordBitReader;
+    }
+
+    /** Utility class to read a list of delta encoded longs. */
+    private final static class OffsetsLongIterator implements LongIterator {
+        private final InputBitStream offsetIbs;
+        private final long n;
+        //        private long offset;
+        private long i;
+
+        private OffsetsLongIterator(final InputBitStream offsetIbs, final long n) {
+            this.offsetIbs = offsetIbs;
+            this.n = n;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return i <= n;
+        }
+
+        @Override
+        public long nextLong() {
+            if (!hasNext()) throw new NoSuchElementException();
+            i++;
+            try {
+//                return offset += offsetIbs.readLongDelta();
+                return offsetIbs.readLongDelta();
+
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    /**
+     * Store an immutable graph using ans.
+     *
+     * @param graph graph to store.
+     * @param basename disk path.
+     * @throws IOException
+     */
     public static void store(ImmutableGraph graph, CharSequence basename) throws IOException {
 
         ByteOrder byteOrder = ByteOrder.nativeOrder();
@@ -71,7 +125,6 @@ public class AnsGraph extends ImmutableGraph {
         // the model id for now is the index of the node
         int modelNum = 0;
         for (final NodeIterator nodeIterator = graph.nodeIterator(); nodeIterator.hasNext(); ) {
-//        for (int i = 0; i < N; i++) {
             if (DEBUG) {
                 if ((i++ % 10000) == 0)
                     System.out.println("Node num: " + i);
@@ -158,11 +211,19 @@ public class AnsGraph extends ImmutableGraph {
         return ret;
     }
 
+    /**
+     * Load an ans encoded graph.
+     *
+     * @param basename Path to the file.
+     * @return Loaded AnsGraph.
+     * @throws IOException
+     */
     public static AnsGraph load(CharSequence basename) throws IOException {
-        return new AnsGraph().loadInternal(basename);
+        return loadInternal(basename);
     }
 
-    protected AnsGraph loadInternal(CharSequence basename) throws IOException {
+
+    protected static AnsGraph loadInternal(CharSequence basename) throws IOException {
 
         // open properties file
         final FileInputStream propertyFile = new FileInputStream(basename + PROPERTIES_EXTENSION);
@@ -175,44 +236,39 @@ public class AnsGraph extends ImmutableGraph {
 
         // byte order
         ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
-//        if (properties.get("byteorder").equals(ByteOrder.BIG_ENDIAN.toString())) byteOrder = ByteOrder.BIG_ENDIAN;
         if (properties.get("byteorder").equals(ByteOrder.LITTLE_ENDIAN.toString())) byteOrder = ByteOrder.LITTLE_ENDIAN;
 
-        // loading models form .models file
+        // loading models from .models file
         final int numModels = Integer.parseInt(properties.getProperty("numberofmodels"));
-        ansModels = new AnsModel[numModels];
+        AnsModel[] ansModels = new AnsModel[numModels];
 
-        LongBigArrayBigList modelsLongList = loadLongBigList(basename + MODEL_EXTENSION, byteOrder);
+        LongBigList modelsLongList = loadLongBigList(basename + MODEL_EXTENSION, byteOrder);
 
-        int l = 0; // TODO: check this
+        int l = 0;
         LongWordBitReader modelLongWordReader = new LongWordBitReader(modelsLongList, l);
         // each model is rebuilt reading the necessary info from the file
         for (int i = 0; i < numModels; i++) {
             ansModels[i] = AnsModel.rebuildModel(modelLongWordReader);
         }
-        // load the offsets
-        // for now load to memory, TODO: fix this
-        final InputBitStream ioffsets = new InputBitStream(basename + OFFSETS_EXTENSION);
-        offsets = new LongArrayList();
-        for (int i = 0; i < nodes; i++)
-            offsets.add(ioffsets.readLongDelta());
 
-        LongBigArrayBigList graph = loadLongBigList(basename + GRAPH_EXTENSION, byteOrder);
+        LongBigList graph = loadLongBigList(basename + GRAPH_EXTENSION, byteOrder);
 
+        // load offsets
+        final InputBitStream offsetIbs = new InputBitStream(basename + OFFSETS_EXTENSION);
 
-        AnsGraph g = new AnsGraph();
-        g.numNodes = nodes;
-        g.offsets = offsets;
-        g.ansModels = ansModels;
-        g.graph = graph;
-        g.outdegreeLongWordBitReader = new LongWordBitReader(graph, 0);
+        LongBigList offsets = new EliasFanoMonotoneLongBigList(nodes + 1, graph.size64() * (Long.SIZE + 1), new OffsetsLongIterator(offsetIbs, nodes));
+        offsetIbs.close();
 
-        return g;
-
+        return new AnsGraph(nodes, ansModels, offsets, graph, new LongWordBitReader(graph, 0));
     }
 
+    @Override
     public LazyIntIterator successors(int node) {
-        return new AnsSuccessorsReader(outdegree(node), getModel(node), graph, offsets.getLong(node));
+        AnsModel a = getModel(node);
+        if (a == null)
+            return new EmptyAnsSuccessorsReader();
+
+        return new AnsSuccessorsReader(outdegree(node), a, graph, offsets.getLong(node));
     }
 
     public int[] successorsArray(int node) {
@@ -235,12 +291,17 @@ public class AnsGraph extends ImmutableGraph {
     }
 
     private AnsModel getModel(int i) {
-        return ansModels[modelId(i)].copy();
+        int id = modelId(i);
+        if (id == -1)
+            return null;
+        return ansModels[id].copy();
     }
 
     public int modelId(int i) {
         // read the outdegree, then read the model id written in gamma
-        outdegreeLongWordBitReader.position(offsets.getLong(i)).readGamma();
+        long od = outdegreeLongWordBitReader.position(offsets.getLong(i)).readGamma();
+        if (od == 0) return -1;
+
         return (int) outdegreeLongWordBitReader.readGamma();
     }
 

@@ -10,39 +10,28 @@ import java.util.Map;
 
 public class AnsModel {
 
-    /**
-     * Sum of frequencies, usually a power of two.
-     */
+    /** Sum of frequencies, usually a power of two. */
     protected int M;
-    /**
-     * Number of symbols.
-     */
+    /** Number of symbols. */
     protected int N;
-    /**
-     * Symbols to index mapping.
-     */
-
+    /** Symbols to index mapping. */
     protected Int2IntOpenHashMap symbolsMapping;
-    /**
-     * Index to symbols mapping.
-     */
+    /** Index to symbols mapping. */
     protected Int2IntOpenHashMap invSymbolsMapping;
-    /**
-     * Symbol frequencies.
-     */
+    /** Symbol frequencies. */
     protected int[] frequencies;
-    /**
-     * Cumulative array.
-     */
+    /** Cumulative array. */
     protected int[] cumulative;
-    /**
-     * Symbols array.
-     */
+    /** Symbols array. */
     protected int[] sym;
 
     public AnsModel() {
     }
 
+    /**
+     * Build an Ans model from a symbol stats object.
+     * @param s SymbolStats instance
+     */
     public AnsModel(SymbolStats s) {
         // get mappings and frequencies
         symbolsMapping = s.symbolsMapping;
@@ -72,9 +61,6 @@ public class AnsModel {
         }
     }
 
-    /**
-     * Print Ans model info.
-     */
     public void debugPrint() {
         System.out.println("---- Symbol mapping --------");
         for (Map.Entry<Integer, Integer> e : symbolsMapping.int2IntEntrySet())
@@ -95,6 +81,13 @@ public class AnsModel {
         System.out.println();
     }
 
+    /**
+     * Write the model info on a LongWordOutputBitStream.
+     *
+     * @param modelStream stream to write info.
+     * @return number of bits written.
+     * @throws IOException
+     */
     public long dump(LongWordOutputBitStream modelStream) throws IOException {
         long written = 0;
 
@@ -112,6 +105,11 @@ public class AnsModel {
         return written;
     }
 
+    /**
+     * Rebuild an Ans model reading info from a LongWordBitReader
+     * @param br LongWordBitReader with model info.
+     * @return AnsModel instantiated reading from the reader.
+     */
     public static AnsModel rebuildModel(LongWordBitReader br) {
 
         AnsModel m = new AnsModel();
@@ -141,6 +139,10 @@ public class AnsModel {
         return m;
     }
 
+    /**
+     * Build a copy of the current model.
+     * @return Copy of the current model.
+     */
     public AnsModel copy() {
 
         AnsModel m = new AnsModel();
