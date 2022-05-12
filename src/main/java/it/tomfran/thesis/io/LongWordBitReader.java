@@ -158,6 +158,10 @@ public class LongWordBitReader {
         return extractInternal(Long.SIZE);
     }
 
+    public long readState(int len){
+        return extractInternal(len);
+    }
+
     public long readNonZeroGamma() {
         final int msb = readUnary();
         return extractInternal(msb) | (1L << msb);

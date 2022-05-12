@@ -1,6 +1,7 @@
 package it.tomfran.thesis.graph;
 
 import it.tomfran.thesis.ans.AnsDecoder;
+import it.tomfran.thesis.ans.AnsEncoder;
 import it.tomfran.thesis.ans.AnsModel;
 import it.tomfran.thesis.io.LongWordBitReader;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
@@ -48,25 +49,26 @@ public class AnsSuccessorsReader implements LazyIntIterator {
     }
 
     private void buildDecoder(){
+        if (DEBUG) System.out.println("AnsSuccessorsReader: offset: " + offset);
         graphLongWordBitReader.position(offset);
-        // read the outdegree and the model id, throw them away
-        graphLongWordBitReader.readGamma();
-        graphLongWordBitReader.readGamma();
+            // read the outdegree and the model id, throw them away
+        long a = graphLongWordBitReader.readGamma();
+        long b = graphLongWordBitReader.readGamma();
+        if (DEBUG) System.out.println("AnsSuccessorsReader: outdegree: " + a + " modelid: " + b);
         // read the number of states
         int numStates = (int) graphLongWordBitReader.readGamma();
+
         // create the states list, fill with numStates longs
-        LongArrayList sl = new LongArrayList();
-//        System.out.println("Need to read numStates: " + numStates);
+        LongArrayList sl = new LongArrayList(numStates);
+        if (DEBUG) System.out.println("AnsSuccessorsReader: rebuilding decoder, numstates: " + numStates);
         for (int i = 0; i < numStates; i++) {
-//            System.out.println("STATE: " + i);
-            sl.add(graphLongWordBitReader.readLong());
+            sl.add(i, graphLongWordBitReader.readState(AnsEncoder.NORM_POW));
+//            sl.add(i, graphLongWordBitReader.readGamma());
+
+            if (DEBUG) System.out.println("\t- " + sl.getLong(i));
         }
 
         decoder = new AnsDecoder(model, sl, numStates);
-
-        if (DEBUG){
-            decoder.debugPrint();
-        }
     }
 
     @Override

@@ -7,11 +7,12 @@ import java.io.IOException;
 
 public class AnsEncoder {
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
+    public static final int NORM_POW = 50;
+    /** Normalization threshold. */
+    public static final long NORM_THS = (1L << (long) NORM_POW);
     /** Ans model used for encoding. */
     protected AnsModel model;
-    /** Normalization threshold. */
-    protected final long NORM_THS = (1L << 63);
     /** Normalization count. */
     public int normCount;
     /** Current state. */
@@ -36,6 +37,7 @@ public class AnsEncoder {
      * @param s The int to encode.
      */
     public void encode(int s) {
+        if (DEBUG) System.out.println("ANSEncoder: encoding " + s);
         int fs, cs, symIndex;
         long j, r, stateTmp;
         // get freq and cumulative
@@ -69,7 +71,6 @@ public class AnsEncoder {
                 System.out.println("STATE IS BIGGER THAN EXPECTED");
             }
         }
-        // System.out.println("ENC: norm, state -> " + state);
         stateList.add(state);
         state = 0L;
         normCount++;
@@ -99,15 +100,15 @@ public class AnsEncoder {
         written += os.writeGamma(modelId);
         written += os.writeGamma(normCount);
         for (int i = normCount - 1; i >= 0; i--) {
-            written += os.append(stateList.getLong(i), Long.SIZE);
+            written += os.append(stateList.getLong(i), NORM_POW);
         }
         return written;
     }
 
     public void debugPrint(){
-        System.out.println("STATES: ");
+        System.out.println("AnsEncoder: state list: ");
         for (Long e : stateList){
-            System.out.println("- " + e);
+            System.out.println("\t- " + e);
         }
     }
 

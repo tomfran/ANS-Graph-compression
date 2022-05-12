@@ -29,14 +29,14 @@ import static java.lang.Math.max;
 
 public class AnsGraph extends ImmutableGraph {
 
-    private static final boolean DEBUG = true;
-    private static final boolean ANS_DEBUG = false;
-
+    private static final boolean DEBUG = false;
 
     public static final String GRAPH_EXTENSION = ".graph";
     public static final String OFFSETS_EXTENSION = ".offset";
     public static final String MODEL_EXTENSION = ".model";
     public static final String PROPERTIES_EXTENSION = ".properties";
+
+    public static final int P_RANGE = 5;
 
     /** Number of nodes. */
     protected int numNodes;
@@ -119,36 +119,26 @@ public class AnsGraph extends ImmutableGraph {
 
         int N = graph.numNodes();
 
-        int i = 0;
-        if (DEBUG) {
-            System.out.println("Started Encoding");
-        }
         // the model id for now is the index of the node
         long current = 0;
         long prev = 0;
         int modelNum = 0;
         for (final NodeIterator nodeIterator = graph.nodeIterator(); nodeIterator.hasNext(); ) {
-            if (DEBUG) {
-                if ((i++ % 100000) == 0)
-                    System.out.println("Node num: " + i);
-            }
+
             nodeIterator.nextInt();
             int outdegree = nodeIterator.outdegree();
             numArcs += outdegree;
             // write outdegree, if zero do not compute the rest
             outdegreeBits += graphStream.writeGamma(outdegree);
             if (outdegree > 0) {
+
                 int[] succ = computeGaps(nodeIterator.successorArray(), outdegree);
                 // build symbol stats
-                SymbolStats symStats = new SymbolStats(succ, outdegree, 10);
+                SymbolStats symStats = new SymbolStats(succ, outdegree, P_RANGE);
                 // build models
                 AnsModel m = new AnsModel(symStats);
                 AnsEncoder e = new AnsEncoder(m);
                 e.encodeAll(succ, outdegree);
-                if (ANS_DEBUG) {
-                    System.out.println("\nModel num: " + modelNum);
-                    e.debugPrint();
-                }
                 // model id, state count, statelist to .graph file
                 stateBits += e.dump(graphStream, modelNum);
                 modelNum++;
@@ -193,11 +183,11 @@ public class AnsGraph extends ImmutableGraph {
         properties.store(propertyFile, "AnsGraph properties");
         propertyFile.close();
 
-        if (DEBUG) System.out.println("Compression completed");
     }
 
     private static int[] computeGaps(int[] arr, long length) {
         int n = (int) length;
+
         int[] ret = Arrays.copyOf(arr, n);
 
         Arrays.sort(ret);
@@ -213,6 +203,7 @@ public class AnsGraph extends ImmutableGraph {
             ret[i] = ret[n - i - 1];
             ret[n - i - 1] = tmp;
         }
+
         return ret;
     }
 
@@ -272,7 +263,6 @@ public class AnsGraph extends ImmutableGraph {
         AnsModel a = getModel(node);
         if (a == null)
             return new EmptyAnsSuccessorsReader();
-
         return new AnsSuccessorsReader(outdegree(node), a, graph, offsets.getLong(node));
     }
 

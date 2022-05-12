@@ -14,6 +14,7 @@ import java.nio.channels.FileChannel;
 
 import static it.unimi.dsi.webgraph.EFGraph.loadLongBigList;
 import static java.lang.Math.max;
+import static java.lang.Math.subtractExact;
 
 public class LongWordTest {
 
@@ -43,42 +44,25 @@ public class LongWordTest {
         final FileChannel graphChannel = graphOs.getChannel();
         final LongWordOutputBitStream graphStream = new LongWordOutputBitStream(graphChannel, ByteOrder.nativeOrder());
 
-        for (int i = 0; i < 100; i++) {
-            graphStream.writeGamma(i);
-        }
-
-        for (int i = 1000; i <1010; i++) {
-            graphStream.append(i, Long.SIZE);
-        }
-
-        for (int i = 0; i < 100; i++) {
-            graphStream.writeGamma(i);
-        }
+        graphStream.writeGamma(2);
+        graphStream.writeGamma(5);
+        graphStream.writeGamma(1);
+        graphStream.append(514, 64);
+        graphStream.writeGamma(0);
 
         graphStream.close();
         graphChannel.close();
         graphOs.close();
 
         LongBigArrayBigList modelsLongList = loadLongBigList(filename, ByteOrder.nativeOrder());
-        int l = 32; // TODO: check this
+        int l = 0; // TODO: check this
         LongWordBitReader modelLongWordReader = new LongWordBitReader(modelsLongList, l);
 
-        for (int i = 0; i < 100; i++) {
-            long e = modelLongWordReader.readGamma();
-            assert (i == e);
-        }
-
-        for (int i = 1000; i <1010; i++) {
-            long e = modelLongWordReader.readLong();
-            assert (i == e);
-            System.out.println(e);
-        }
-
-        for (int i = 0; i < 100; i++) {
-            long e = modelLongWordReader.readGamma();
-            assert (i == e);
-        }
-
+        assert 2 == modelLongWordReader.readGamma();
+        assert 5 == modelLongWordReader.readGamma();
+        assert 1 == modelLongWordReader.readGamma();
+        assert 514 == modelLongWordReader.readLong();
+        assert 0 == modelLongWordReader.readGamma();
     }
 
     @Test
@@ -92,7 +76,11 @@ public class LongWordTest {
         int[] off = new int[1000];
         off[0] = 0;
         for (int i = 0; i < 1000; i++) {
-            off[i] = graphStream.writeGamma(i) + off[max(0, i - 1)];
+            if (i == 42)
+                off[i] = graphStream.writeGamma(i+8000) + off[max(0, i - 1)];
+            else
+                off[i] = graphStream.writeGamma(i) + off[max(0, i - 1)];
+
         }
 
         graphStream.close();
@@ -103,9 +91,13 @@ public class LongWordTest {
         LongBigArrayBigList modelsLongList = loadLongBigList(filename, ByteOrder.nativeOrder());
         int l = 32; // TODO: check this
         LongWordBitReader modelLongWordReader = new LongWordBitReader(modelsLongList, l);
+//
+//        for (int i = 30; i < 60; i++) {
+//            System.out.println("i: " + i + " : off[i]: " + off[i]);
+//        }
 
         System.out.println("Position to " + off[560] + " and read of 20 ints");
-        modelLongWordReader.position(off[560]);
+        modelLongWordReader.position(373);
 
 
         for (int i = 0; i < 20; i++) {

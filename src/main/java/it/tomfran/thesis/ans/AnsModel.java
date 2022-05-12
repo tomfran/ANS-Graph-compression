@@ -91,16 +91,15 @@ public class AnsModel {
     public long dump(LongWordOutputBitStream modelStream) throws IOException {
         long written = 0;
 
-        // write N, and 2N values for the mapping
+        // write N, and N symbols
         written += modelStream.writeGamma(N);
-        for (Int2IntMap.Entry e : symbolsMapping.int2IntEntrySet()) {
-            written += modelStream.writeGamma(e.getIntKey());
-            written += modelStream.writeGamma(e.getIntValue());
+        for (int i = 0; i < N; i++) {
+            written += modelStream.writeGamma(invSymbolsMapping.get(i));
         }
         // write frequencies
-        for (int e : frequencies)
+        for (int e : frequencies) {
             written += modelStream.writeGamma(e);
-
+        }
 
         return written;
     }
@@ -119,12 +118,11 @@ public class AnsModel {
         m.symbolsMapping = new Int2IntOpenHashMap();
         m.invSymbolsMapping = new Int2IntOpenHashMap();
 
-        int a, b;
+        int a;
         for (int i = 0; i < m.N; i++) {
             a = (int) br.readGamma();
-            b = (int) br.readGamma();
-            m.symbolsMapping.put(a, b);
-            m.invSymbolsMapping.put(b, a);
+            m.symbolsMapping.put(a, i);
+            m.invSymbolsMapping.put(i, a);
         }
         // read frequencies
         m.frequencies = new int[m.N];
