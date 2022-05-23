@@ -62,7 +62,9 @@ public class AnsSuccessorsReader implements LazyIntIterator {
         LongArrayList sl = new LongArrayList(numStates);
         if (DEBUG) System.out.println("AnsSuccessorsReader: rebuilding decoder, numstates: " + numStates);
         for (int i = 0; i < numStates; i++) {
-            sl.add(i, graphLongWordBitReader.readState(AnsEncoder.NORM_POW));
+//            sl.add(i, graphLongWordBitReader.readState(AnsEncoder.NORM_POW));
+            sl.add(i, graphLongWordBitReader.readState(63));
+
 //            sl.add(i, graphLongWordBitReader.readGamma());
 
             if (DEBUG) System.out.println("\t- " + sl.getLong(i));

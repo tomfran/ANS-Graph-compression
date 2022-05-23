@@ -29,7 +29,7 @@ public class errorGraph {
             System.out.println("Num nodes mismatch");
             return false;
         }
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < ans.numNodes(); i++) {
 
             LazyIntIterator i1 = ef.successors(i);
             LazyIntIterator i2 = ans.successors(i);
@@ -82,19 +82,24 @@ public class errorGraph {
         final boolean GEN = true;
 
         boolean check = true;
+        int from, to, p, pergen;
+        from = p = 10000;
+        to = 100000;
+        pergen = 1000;
         if (GEN)
-            for (int n = 10; n <= 20 && check; n+=1) {
+        for (int n = from; n <= to && check; n+=p) {
                 System.out.println("GEN:" + n);
-                for (int i = 0; i < 1 && check; i++) {
+                for (int i = 0; i < pergen && check; i++) {
 //                    System.out.println("\n\n#######\n\n");
                     genGraph(n, 0.0001);
                     if (!check()) {
-                        System.err.println("ERROR FOUND");
+                        System.out.println("###### ERROR FOUND");
                         check = false;
                     }
                 }
 
             }
+//        storeTest();
     }
 
 

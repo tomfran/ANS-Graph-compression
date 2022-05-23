@@ -30,6 +30,8 @@ import static java.lang.Math.max;
 public class AnsGraph extends ImmutableGraph {
 
     private static final boolean DEBUG = false;
+    private static final boolean ANSDEBUG = false;
+
 
     public static final String GRAPH_EXTENSION = ".graph";
     public static final String OFFSETS_EXTENSION = ".offset";
@@ -140,6 +142,7 @@ public class AnsGraph extends ImmutableGraph {
                 AnsEncoder e = new AnsEncoder(m);
                 e.encodeAll(succ, outdegree);
                 // model id, state count, statelist to .graph file
+                if (ANSDEBUG) e.debugPrint();
                 stateBits += e.dump(graphStream, modelNum);
                 modelNum++;
                 // write model to .model file
@@ -185,7 +188,7 @@ public class AnsGraph extends ImmutableGraph {
 
     }
 
-    private static int[] computeGaps(int[] arr, long length) {
+    public static int[] computeGaps(int[] arr, long length) {
         int n = (int) length;
 
         int[] ret = Arrays.copyOf(arr, n);

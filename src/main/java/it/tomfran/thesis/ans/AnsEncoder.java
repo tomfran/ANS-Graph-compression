@@ -8,9 +8,10 @@ import java.io.IOException;
 public class AnsEncoder {
 
     private static final boolean DEBUG = false;
-    public static final int NORM_POW = 50;
+    private static final boolean DUMPDEBUG = false;
+//    public static final int NORM_POW = 63;
     /** Normalization threshold. */
-    public static final long NORM_THS = (1L << (long) NORM_POW);
+//    public static final long NORM_THS = (1L << (long) NORM_POW);
     /** Ans model used for encoding. */
     protected AnsModel model;
     /** Normalization count. */
@@ -47,17 +48,17 @@ public class AnsEncoder {
         // update the state
         j = Long.divideUnsigned(state, fs);
         r = Long.remainderUnsigned(state, fs);
-        stateTmp = j * model.M + cs + r;
-        // if the current state overflows, normalize previous and re-encode,
-        // else assign the new state
-        if (Long.compareUnsigned(stateTmp, NORM_THS) >= 0) {
-            // this resets the state\
+
+        try {
+            long res = Math.multiplyExact(j, model.M);
+            res = Math.addExact(res, (cs+r));
+            state = res;
+        } catch (ArithmeticException e) {
+//            System.out.println("OVERFLOW PREVENTED");
             normalize();
             j = Long.divideUnsigned(state, fs);
             r = Long.remainderUnsigned(state, fs);
             state = j * model.M + cs + r;
-        } else {
-            state = stateTmp;
         }
     }
 
@@ -65,12 +66,6 @@ public class AnsEncoder {
      * Normalize the state to prevent overflows.
      */
     public void normalize() {
-        // System.out.println("Normalization in progress");
-        if (DEBUG) {
-            if (Long.compareUnsigned(state, Long.MAX_VALUE) >= 0) {
-                System.out.println("STATE IS BIGGER THAN EXPECTED");
-            }
-        }
         stateList.add(state);
         state = 0L;
         normCount++;
@@ -99,9 +94,13 @@ public class AnsEncoder {
         long written = 0;
         written += os.writeGamma(modelId);
         written += os.writeGamma(normCount);
+        if (DUMPDEBUG) System.out.println("ANS ENCODER: Written bits before states: " + written);
         for (int i = normCount - 1; i >= 0; i--) {
-            written += os.append(stateList.getLong(i), NORM_POW);
+            written += os.append(stateList.getLong(i), 63);
+            if (DUMPDEBUG) System.out.println("ANS ENCODER: Written bits after " + i + "th state: " + written);
         }
+        // this could prevent the erorr while reading the state
+        written += os.writeGamma(0);
         return written;
     }
 

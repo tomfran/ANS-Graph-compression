@@ -71,15 +71,22 @@ public class LongWordBitReader {
             System.err.println(this + ".extract(" + width + ") [buffer = " + Long.toBinaryString(buffer) + ", filled = " + filled + "]");
 
         if (width <= filled) {
+            if (DEBUG)
+                System.out.println("LongWordBitReader: width <= filled");
             final long result = buffer & (1L << width) - 1;
             filled -= width;
             buffer >>>= width;
             return result;
         } else {
+            if (DEBUG)
+                System.out.println("LongWordBitReader: width > filled: w -> " + width + " f-> " + filled);
             long result = buffer;
             buffer = list.getLong(++curr);
 
             final int remainder = width - filled;
+            if (DEBUG)
+                System.out.println("REMAINDER: " + remainder);
+
             // Note that this WON'T WORK if remainder == Long.SIZE, but that's not going to
             // happen.
             result |= (buffer & (1L << remainder) - 1) << filled;
@@ -159,6 +166,7 @@ public class LongWordBitReader {
     }
 
     public long readState(int len){
+//        System.out.println("\n\nREADSTATE CALLED: ");
         return extractInternal(len);
     }
 
