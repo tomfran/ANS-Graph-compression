@@ -2,8 +2,8 @@ package it.tomfran.thesis.ans;
 
 import it.tomfran.thesis.io.LongWordBitReader;
 import it.tomfran.thesis.io.LongWordOutputBitStream;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.sux4j.util.EliasFanoIndexedMonotoneLongBigList;
 
 import java.io.IOException;
 import java.util.Map;
@@ -23,7 +23,7 @@ public class AnsModel {
     /** Cumulative array. */
     protected int[] cumulative;
     /** Symbols array. */
-    protected int[] sym;
+    protected EliasFanoIndexedMonotoneLongBigList sym;
 
     public AnsModel() {
     }
@@ -45,7 +45,7 @@ public class AnsModel {
     }
 
 
-    private void buildCumulativeSymbols() {
+    public void buildCumulativeSymbols() {
         cumulative = new int[N];
         cumulative[0] = 1;
 
@@ -53,12 +53,23 @@ public class AnsModel {
             cumulative[i] = cumulative[i - 1] + frequencies[i - 1];
 
         // sym
-        sym = new int[M + 1];
-        int pos = 1;
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < frequencies[i]; j++)
-                sym[pos++] = i;
-        }
+        sym = new EliasFanoIndexedMonotoneLongBigList(new IntArrayList(cumulative));
+    }
+
+    public int getSymbolMapping (int sym) {
+        return symbolsMapping.get(sym);
+    }
+
+    public int getFrequency(int symIndex) {
+        return frequencies[symIndex];
+    }
+
+    public int getCumulative(int symIndex) {
+        return cumulative[symIndex];
+    }
+
+    public int getRemainderSym(int r) {
+        return (int) sym.weakPredecessorIndex(r);
     }
 
     public void debugPrint() {
@@ -79,6 +90,9 @@ public class AnsModel {
         for (int i = 0; i < N; i++)
             System.out.print(cumulative[i] + " ");
         System.out.println();
+
+        System.out.println("---- SYM ------------");
+        System.out.print(sym);
     }
 
     /**
@@ -150,8 +164,9 @@ public class AnsModel {
         m.invSymbolsMapping = invSymbolsMapping.clone();
         m.frequencies = frequencies.clone();
         m.cumulative = cumulative.clone();
-        m.sym = sym.clone();
+        // TODO: check clone in ELIASfano..
+        m.sym = sym;
         return m;
-
     }
+
 }

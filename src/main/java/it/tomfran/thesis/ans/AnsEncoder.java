@@ -42,9 +42,9 @@ public class AnsEncoder {
         int fs, cs, symIndex;
         long j, r, stateTmp;
         // get freq and cumulative
-        symIndex = model.symbolsMapping.get(s);
-        fs = model.frequencies[symIndex];
-        cs = model.cumulative[symIndex];
+        symIndex = model.getSymbolMapping(s);
+        fs = model.getFrequency(symIndex);
+        cs = model.getCumulative(symIndex);
         // update the state
         j = Long.divideUnsigned(state, fs);
         r = Long.remainderUnsigned(state, fs);

@@ -57,9 +57,9 @@ public class AnsDecoder {
         // remainder to identity symbol
         r = (int) (1 + (Long.remainderUnsigned(state - 1, model.M)));
         // get freq and cumulative
-        symIndex = model.sym[r];
-        fs = model.frequencies[symIndex];
-        cs = model.cumulative[symIndex];
+        symIndex = model.getRemainderSym(r);
+        fs = model.getFrequency(symIndex);
+        cs = model.getCumulative(symIndex);
         // update the state
         j = Long.divideUnsigned(state - r, model.M);
         stateList.set(stateIndex, j * fs - cs + r);

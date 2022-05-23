@@ -7,7 +7,7 @@ import it.unimi.dsi.webgraph.examples.ErdosRenyiGraph;
 
 import java.io.IOException;
 
-public class errorGraph {
+public class ErrorGraph {
 
     static void genGraph(int n, double e) throws IOException {
 
@@ -85,7 +85,7 @@ public class errorGraph {
         int from, to, p, pergen;
         from = p = 10000;
         to = 100000;
-        pergen = 1000;
+        pergen = 10;
         if (GEN)
         for (int n = from; n <= to && check; n+=p) {
                 System.out.println("GEN:" + n);

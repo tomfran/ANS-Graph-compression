@@ -38,9 +38,9 @@ public class AnsTest {
         int[] l1 = getRandom(100);
 
         // compute stats for these two
-        SymbolStats s1 = new SymbolStats(l1, 100, 10);
+        SymbolStats s1 = new SymbolStats(l1, 100, 3);
         AnsModel m1 = new AnsModel(s1);
-        m1.debugPrint();
+
         AnsEncoder ans1 = new AnsEncoder(m1);
 
         // encode first list FALSE TO AVOID FLUSH
