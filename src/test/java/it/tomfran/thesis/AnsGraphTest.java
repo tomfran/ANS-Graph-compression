@@ -64,15 +64,15 @@ public class AnsGraphTest {
     public static void main(String[] args) {
         try {
             ImmutableGraph g = BVGraph.load("data/wiki/enwiki-2013");
-//            AnsGraph.store(g, "data/wiki/ans/enwiki-2013");
-            AnsGraph ans = AnsGraph.load("data/wiki/ans/enwiki-2013");
+            AnsGraph.store(g, "data/wiki/ans/enwiki-2013");
+//            AnsGraph ans = AnsGraph.load("data/wiki/ans/enwiki-2013");
 //
 //            ImmutableGraph g = EFGraph.load("data/uk100/ef/EF_UK");
 //            AnsGraph.store(g, "data/uk100/ans/uk100");
 //            AnsGraph ans = AnsGraph.load("data/uk100/ans/uk100");
 
-            System.out.println("Integrity check for the two graphs: " +
-                    integrityCheck(g, ans));
+//            System.out.println("Integrity check for the two graphs: " +
+//                    integrityCheck(g, ans));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

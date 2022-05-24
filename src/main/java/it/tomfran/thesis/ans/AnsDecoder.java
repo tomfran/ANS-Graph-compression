@@ -68,7 +68,7 @@ public class AnsDecoder {
         if (Long.compareUnsigned(stateList.getLong(stateIndex), 0L) == 0)
             stateIndex++;
 
-        return model.invSymbolsMapping.get(symIndex);
+        return model.getInvSymbolMapping(symIndex);
     }
 
     public void debugPrint(){

@@ -45,14 +45,18 @@ public class AnsEncoder {
         symIndex = model.getSymbolMapping(s);
         fs = model.getFrequency(symIndex);
         cs = model.getCumulative(symIndex);
+        if (DEBUG) System.out.println("Sym: " + s + " Sym index: " + symIndex + " fs: " + fs + " cs: " + cs);
         // update the state
         j = Long.divideUnsigned(state, fs);
         r = Long.remainderUnsigned(state, fs);
+        if (DEBUG) System.out.println("J: " + j + " r: " + r );
 
         try {
             long res = Math.multiplyExact(j, model.M);
             res = Math.addExact(res, (cs+r));
+            if (DEBUG) System.out.println("new state: " + res + " M: " + model.M);
             state = res;
+            if (DEBUG) System.out.println(state);
         } catch (ArithmeticException e) {
 //            System.out.println("OVERFLOW PREVENTED");
             normalize();

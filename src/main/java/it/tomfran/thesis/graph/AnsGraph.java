@@ -29,7 +29,7 @@ import static java.lang.Math.max;
 
 public class AnsGraph extends ImmutableGraph {
 
-    private static final boolean PROGRESS = false;
+    private static final boolean PROGRESS = true;
     private static final boolean DEBUG = false;
     private static final boolean ANSDEBUG = false;
 
@@ -92,6 +92,7 @@ public class AnsGraph extends ImmutableGraph {
         }
     }
 
+
     /**
      * Store an immutable graph using ans.
      *
@@ -129,9 +130,11 @@ public class AnsGraph extends ImmutableGraph {
         int i;
         if (PROGRESS) i = 0;
         for (final NodeIterator nodeIterator = graph.nodeIterator(); nodeIterator.hasNext(); ) {
-            if (PROGRESS) if ((i % 10000) == 0) {
-                System.out.println("ANS graph compression: node -> " + i);
-                i++;
+            if (PROGRESS) {
+                if ((i % 10000) == 0) {
+                    System.out.println("ANS graph compression: node -> " + i);
+                    i++;
+                }
             }
             nodeIterator.nextInt();
             int outdegree = nodeIterator.outdegree();

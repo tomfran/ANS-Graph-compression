@@ -60,6 +60,10 @@ public class AnsModel {
         return symbolsMapping.get(sym);
     }
 
+    public int getInvSymbolMapping (int sym) {
+        return invSymbolsMapping.get(sym);
+    }
+
     public int getFrequency(int symIndex) {
         return frequencies[symIndex];
     }
