@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 public class AnsGraphBenchmark {
 
     CharSequence basename = "data/random/";
+    CharSequence METHOD = "optimal";
     AnsGraph ag;
     EFGraph ef;
     int node = 10;

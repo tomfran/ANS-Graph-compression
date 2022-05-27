@@ -1,5 +1,10 @@
 package it.tomfran.thesis.ans;
 
+import it.tomfran.thesis.io.LongWordBitReader;
+import it.tomfran.thesis.io.LongWordOutputBitStream;
+
+import java.io.IOException;
+
 public class AnsModelEquiprobable extends AnsModel {
 
     public AnsModelEquiprobable(int max){
@@ -34,6 +39,20 @@ public class AnsModelEquiprobable extends AnsModel {
     @Override
     public void debugPrint() {
         System.out.println("M: " + this.M);
+    }
+
+    @Override
+    public long dump(LongWordOutputBitStream modelStream) throws IOException {
+        return modelStream.writeGamma(M);
+    }
+
+    public static AnsModel rebuildModel(LongWordBitReader br) {
+        return new AnsModelEquiprobable((int) br.readGamma());
+    }
+
+    @Override
+    public AnsModel copy() {
+        return new AnsModelEquiprobable(M);
     }
 }
 

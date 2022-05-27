@@ -1,6 +1,8 @@
 # ANS Graph compression
 Graph compression using Asymmetric Numeral Systems.
 
+## Source code
+
 ### ANS encoder and decoder
 [Encoder source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/ans/AnsEncoder.java) \
 [Decoder source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/ans/AnsDecoder.java)

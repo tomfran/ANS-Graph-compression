@@ -9,11 +9,13 @@ import java.io.IOException;
 
 public class ErrorGraph {
 
+    static CharSequence METHOD = "orderStatistic";
+
     static void genGraph(int n, double e) throws IOException {
 
         ErdosRenyiGraph g = new ErdosRenyiGraph(n, e);
         String filename = "data/error/ans";
-        AnsGraph.store(g, filename);
+        AnsGraph.store(g, filename, METHOD);
         String f2 = "data/error/ef";
         EFGraph.store(g, f2);
     }
@@ -72,7 +74,7 @@ public class ErrorGraph {
         EFGraph ef = EFGraph.load(f2);
         System.out.println(ef);
         System.out.println("### Storing with ANS");
-        AnsGraph.store(ef, "data/error/ans");
+        AnsGraph.store(ef, "data/error/ans", METHOD);
         System.out.println("\n\n REBUILDING \n\n");
         AnsGraph ag = AnsGraph.load("data/error/ans");
         System.out.println(ag);
@@ -83,7 +85,8 @@ public class ErrorGraph {
 
         boolean check = true;
         int from, to, p, pergen;
-        from = p = 10000;
+        from = 10000;
+        p = 10000;
         to = 100000;
         pergen = 10;
         if (GEN)
@@ -91,14 +94,15 @@ public class ErrorGraph {
                 System.out.println("GEN:" + n);
                 for (int i = 0; i < pergen && check; i++) {
 //                    System.out.println("\n\n#######\n\n");
-                    genGraph(n, 0.0001);
+                    genGraph(n, 0.001);
                     if (!check()) {
-                        System.out.println("###### ERROR FOUND");
+                        System.err.println("###### ERROR FOUND");
                         check = false;
                     }
                 }
 
             }
+//        inspect();
 //        storeTest();
     }
 

@@ -38,25 +38,20 @@ public class AnsEncoder {
      * @param s The int to encode.
      */
     public void encode(int s) {
-        if (DEBUG) System.out.println("ANSEncoder: encoding " + s);
         int fs, cs, symIndex;
         long j, r, stateTmp;
         // get freq and cumulative
         symIndex = model.getSymbolMapping(s);
         fs = model.getFrequency(symIndex);
         cs = model.getCumulative(symIndex);
-        if (DEBUG) System.out.println("Sym: " + s + " Sym index: " + symIndex + " fs: " + fs + " cs: " + cs);
         // update the state
         j = Long.divideUnsigned(state, fs);
         r = Long.remainderUnsigned(state, fs);
-        if (DEBUG) System.out.println("J: " + j + " r: " + r );
 
         try {
             long res = Math.multiplyExact(j, model.M);
             res = Math.addExact(res, (cs+r));
-            if (DEBUG) System.out.println("new state: " + res + " M: " + model.M);
             state = res;
-            if (DEBUG) System.out.println(state);
         } catch (ArithmeticException e) {
 //            System.out.println("OVERFLOW PREVENTED");
             normalize();
@@ -98,10 +93,9 @@ public class AnsEncoder {
         long written = 0;
         written += os.writeGamma(modelId);
         written += os.writeGamma(normCount);
-        if (DUMPDEBUG) System.out.println("ANS ENCODER: Written bits before states: " + written);
+        if (DUMPDEBUG) debugPrint();
         for (int i = normCount - 1; i >= 0; i--) {
             written += os.append(stateList.getLong(i), 63);
-            if (DUMPDEBUG) System.out.println("ANS ENCODER: Written bits after " + i + "th state: " + written);
         }
         // this could prevent the erorr while reading the state
         written += os.writeGamma(0);

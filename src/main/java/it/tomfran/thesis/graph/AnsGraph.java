@@ -1,8 +1,6 @@
 package it.tomfran.thesis.graph;
 
-import it.tomfran.thesis.ans.AnsEncoder;
-import it.tomfran.thesis.ans.AnsModel;
-import it.tomfran.thesis.ans.SymbolStats;
+import it.tomfran.thesis.ans.*;
 import it.tomfran.thesis.io.LongWordBitReader;
 import it.tomfran.thesis.io.LongWordOutputBitStream;
 import it.unimi.dsi.fastutil.longs.LongBigList;
@@ -22,6 +20,7 @@ import java.nio.channels.FileChannel;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Properties;
 
 import static it.unimi.dsi.webgraph.EFGraph.loadLongBigList;
@@ -32,6 +31,7 @@ public class AnsGraph extends ImmutableGraph {
     private static final boolean PROGRESS = true;
     private static final boolean DEBUG = false;
     private static final boolean ANSDEBUG = false;
+    private static final boolean ORDERSTATSDEBUG = false;
 
 
     public static final String GRAPH_EXTENSION = ".graph";
@@ -100,7 +100,7 @@ public class AnsGraph extends ImmutableGraph {
      * @param basename disk path.
      * @throws IOException
      */
-    public static void store(ImmutableGraph graph, CharSequence basename) throws IOException {
+    public static void store(ImmutableGraph graph, CharSequence basename, CharSequence method) throws IOException {
 
         ByteOrder byteOrder = ByteOrder.nativeOrder();
 
@@ -133,8 +133,8 @@ public class AnsGraph extends ImmutableGraph {
             if (PROGRESS) {
                 if ((i % 10000) == 0) {
                     System.out.println("ANS graph compression: node -> " + i);
-                    i++;
                 }
+                i++;
             }
             nodeIterator.nextInt();
             int outdegree = nodeIterator.outdegree();
@@ -144,14 +144,25 @@ public class AnsGraph extends ImmutableGraph {
             if (outdegree > 0) {
 
                 int[] succ = computeGaps(nodeIterator.successorArray(), outdegree);
-                // build symbol stats
-                SymbolStats symStats = new SymbolStats(succ, outdegree, P_RANGE);
-                // build models
-                AnsModel m = new AnsModel(symStats);
+                // build model according to method
+                AnsModel m = null;
+                if (method == "optimal") {
+                    SymbolStats symStats = new SymbolStats(succ, outdegree, P_RANGE);
+                    m = new AnsModel(symStats);
+                } else if (method == "orderStatistic") {
+                    int[] sortedSucc = Arrays.copyOf(succ, outdegree);
+                    Arrays.sort(sortedSucc);
+                    if (ORDERSTATSDEBUG) {
+                        System.out.println("GRAPH STORE: outdegree: " + outdegree);
+                        System.out.println(sortedSucc[outdegree / 2] + " " + sortedSucc[(int) (outdegree * 0.75)] + " " + sortedSucc[outdegree - 1]);
+                    }
+                    m = new AnsModelOrderStatistic(sortedSucc[outdegree / 2],
+                            sortedSucc[(int) (outdegree * 0.75)],
+                            sortedSucc[outdegree - 1], 1024);
+                }
                 AnsEncoder e = new AnsEncoder(m);
                 e.encodeAll(succ, outdegree);
                 // model id, state count, statelist to .graph file
-                if (ANSDEBUG) e.debugPrint();
                 stateBits += e.dump(graphStream, modelNum);
                 modelNum++;
                 // write model to .model file
@@ -189,6 +200,7 @@ public class AnsGraph extends ImmutableGraph {
         properties.setProperty("avgnumberofstates", format.format((double) numStates / N));
         properties.setProperty("maxnumberofstates", format.format(maxStates));
         properties.setProperty("numberofmodels", format.format(modelNum));
+        properties.setProperty("method", method.toString());
         properties.setProperty(ImmutableGraph.GRAPHCLASS_PROPERTY_KEY, AnsGraph.class.getName());
 
         final FileOutputStream propertyFile = new FileOutputStream(basename + PROPERTIES_EXTENSION);
@@ -230,7 +242,6 @@ public class AnsGraph extends ImmutableGraph {
         return loadInternal(basename);
     }
 
-
     protected static AnsGraph loadInternal(CharSequence basename) throws IOException {
 
         // open properties file
@@ -254,9 +265,16 @@ public class AnsGraph extends ImmutableGraph {
 
         int l = 0;
         LongWordBitReader modelLongWordReader = new LongWordBitReader(modelsLongList, l);
+
+        String method = properties.getProperty("method");
+
+        System.out.println("method: " + method);
         // each model is rebuilt reading the necessary info from the file
         for (int i = 0; i < numModels; i++) {
-            ansModels[i] = AnsModel.rebuildModel(modelLongWordReader);
+            if (method.equals("optimal"))
+                ansModels[i] = AnsModel.rebuildModel(modelLongWordReader);
+            else if (method.equals("orderStatistic"))
+                ansModels[i] = AnsModelOrderStatistic.rebuildModel(modelLongWordReader);
         }
 
         LongBigList graph = loadLongBigList(basename + GRAPH_EXTENSION, byteOrder);
