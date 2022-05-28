@@ -39,7 +39,7 @@ public class AnsGraph extends ImmutableGraph {
     public static final String MODEL_EXTENSION = ".model";
     public static final String PROPERTIES_EXTENSION = ".properties";
 
-    public static final int P_RANGE = 5;
+    public static final int P_RANGE = 6;
 
     /** Number of nodes. */
     protected int numNodes;
@@ -158,7 +158,7 @@ public class AnsGraph extends ImmutableGraph {
                     }
                     m = new AnsModelOrderStatistic(sortedSucc[outdegree / 2],
                             sortedSucc[(int) (outdegree * 0.75)],
-                            sortedSucc[outdegree - 1], 1024);
+                            sortedSucc[outdegree - 1], P_RANGE);
                 }
                 AnsEncoder e = new AnsEncoder(m);
                 e.encodeAll(succ, outdegree);

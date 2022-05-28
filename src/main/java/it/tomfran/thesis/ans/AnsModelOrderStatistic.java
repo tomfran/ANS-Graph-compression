@@ -23,7 +23,7 @@ public class AnsModelOrderStatistic extends AnsModel {
         this.thirdquartile = thirdquartile;
         this.maxValue = maxValue;
         // this ensures that M can contain the max
-        this.M = Math.max(prec, 8 * maxValue);
+        this.M = Math.max(1 << prec, 8 * maxValue);
 
         assert maxValue <= (Integer.MAX_VALUE / 8);
 

@@ -114,9 +114,11 @@ public class AnsModel {
         for (int i = 0; i < N; i++) {
             written += modelStream.writeGamma(invSymbolsMapping.get(i));
         }
-        // write frequencies
-        for (int e : frequencies) {
-            written += modelStream.writeGamma(e);
+        // write frequencies in reverse order by gap
+        int prev = 0;
+        for (int i = frequencies.length-1; i >= 0; i--) {
+            written += modelStream.writeGamma(frequencies[i] - prev);
+            prev = frequencies[i];
         }
 
         return written;
@@ -142,11 +144,13 @@ public class AnsModel {
             m.symbolsMapping.put(a, i);
             m.invSymbolsMapping.put(i, a);
         }
-        // read frequencies
+        // read frequencies, reverse by gap
         m.frequencies = new int[m.N];
         m.M = 0;
-        for (int i = 0; i < m.N; i++) {
-            m.frequencies[i] = (int) br.readGamma();
+        int prev = 0;
+        for (int i = m.N-1; i >= 0; i--) {
+            m.frequencies[i] = (int) br.readGamma() + prev;
+            prev = m.frequencies[i];
             m.M += m.frequencies[i];
         }
 

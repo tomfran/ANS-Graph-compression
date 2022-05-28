@@ -14,7 +14,7 @@ import java.io.IOException;
 
 public class AnsGraphTest {
 
-    static CharSequence METHOD = "orderStatistic";
+    static CharSequence METHOD = "optimal";
 
     @Test
     public void randomGraphIntegrityCheck() throws IOException {
@@ -66,15 +66,15 @@ public class AnsGraphTest {
     public static void main(String[] args) {
         try {
             ImmutableGraph g = BVGraph.load("data/wiki/enwiki-2013");
-//            AnsGraph.store(g, "data/wiki/ans/"+ METHOD + "_enwiki-2013", METHOD);
-            AnsGraph ans = AnsGraph.load("data/wiki/ans/"+ METHOD + "_enwiki-2013");
+            AnsGraph.store(g, "data/wiki/ans/"+ METHOD + "_enwiki-2013", METHOD);
+//            AnsGraph ans = AnsGraph.load("data/wiki/ans/"+ METHOD + "_enwiki-2013");
 //
 //            ImmutableGraph g = EFGraph.load("data/uk100/EF_UK");
 //            AnsGraph.store(g, "data/uk100/ans/"+ METHOD + "_uk100", METHOD);
 //            AnsGraph ans = AnsGraph.load("data/uk100/ans/"+ METHOD + "_uk100");
-//
-            System.out.println("Integrity check for the two graphs: " +
-                    integrityCheck(g, ans));
+
+//            System.out.println("Integrity check for the two graphs: " +
+//                    integrityCheck(g, ans));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -1,10 +1,10 @@
 package it.tomfran.thesis.ans;
 
+import it.unimi.dsi.fastutil.Arrays;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
+import it.unimi.dsi.fastutil.ints.IntArrays;
+import it.unimi.dsi.fastutil.ints.IntComparator;
 
 public class SymbolStats {
 
@@ -45,26 +45,37 @@ public class SymbolStats {
             freqMap.put(iterator[i], freqMap.getOrDefault(iterator[i], 0) + 1);
             totalTmp++;
         }
+        int n = freqMap.size();
         // sort elements by value
-        List<Entry<Integer, Integer>> sorted = freqMap.entrySet().stream().sorted(
-                (Entry<Integer, Integer> a, Entry<Integer, Integer> b) -> Integer.compare(b.getValue(),
-                        a.getValue())).collect(Collectors.toList());
+        int[] keys = new int[n];
+        int pos = 0;
+        for ( Int2IntMap.Entry e: freqMap.int2IntEntrySet())
+            keys[pos++] = e.getIntKey();
+
+        IntArrays.mergeSort(keys, new IntComparator() {
+            @Override
+            public int compare(int k1, int k2) {
+                return freqMap.get(k2) - freqMap.get(k1);
+            }
+        });
 
         // build symbols mappings
         symbolsMapping = new Int2IntOpenHashMap();
         invSymbolsMapping = new Int2IntOpenHashMap();
         // build frequency arrays
-        int n = freqMap.size();
         frequencies = new int[n];
         total = 0;
         int normFreq;
+        int k;
         for (int i = 0; i < n; i++) {
-            symbolsMapping.put((int) (sorted.get(i).getKey()), i);
-            invSymbolsMapping.put(i, (int) (sorted.get(i).getKey()));
-            normFreq = (int) ((double) sorted.get(i).getValue() / totalTmp * precision);
+            k = keys[i];
+            symbolsMapping.put(k, i);
+            invSymbolsMapping.put(i, k);
+            normFreq = (int) ((double) freqMap.get(k) / totalTmp * precision);
             // make sure that there are no zero frequencies
             frequencies[i] = Integer.max(1, normFreq);
             total += frequencies[i];
+
         }
     }
 
