@@ -4,8 +4,8 @@ package it.tomfran.thesis.clustering;
 import it.tomfran.thesis.ans.SymbolStats;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-
-import java.util.Arrays;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 
 public class DatapointHistogram {
 
@@ -16,19 +16,60 @@ public class DatapointHistogram {
     protected int precision;
 
 
-    public DatapointHistogram (SymbolStats s){
+    public DatapointHistogram(SymbolStats s) {
         this.symbolsMapping = s.symbolsMapping;
         this.frequencies = s.frequencies;
         this.precision = s.precision;
     }
 
-    private double getSymProbability (int sym) {
+    public DatapointHistogram(Int2IntOpenHashMap symbolsMapping, int[] frequencies, int precision) {
+        this.symbolsMapping = symbolsMapping;
+        this.frequencies = frequencies;
+        this.precision = precision;
+    }
+
+    static DatapointHistogram buildCentroidFromCluster(DatapointHistogram[] points, int precision) {
+
+        // get all the symbols in the points
+        IntSet mergedKeys = new IntOpenHashSet();
+
+        for (DatapointHistogram p : points)
+            mergedKeys.addAll(p.symbolsMapping.keySet());
+
+        // build the centroid probability distribution
+        // as the average of all the distributions
+        Int2IntOpenHashMap symbolsMapping = new Int2IntOpenHashMap();
+
+        int pos = 0, n = points.length, k = mergedKeys.size();
+        double[] prob = new double[k];
+        for (int e : mergedKeys) {
+            for (DatapointHistogram p : points)
+                prob[pos] += p.getSymProbability(e);
+            prob[pos] /= n;
+            symbolsMapping.put(e, pos);
+            pos++;
+        }
+
+        // build frequency, scaling probability to precision
+        // need to compute a new precision as the total might change for the Math.max
+        int[] frequencies = new int[k];
+        int newPrecision = 0;
+        for (int i = 0; i < k; i++) {
+            frequencies[i] = Math.max(1, (int) prob[i] * precision);
+            newPrecision += frequencies[i];
+        }
+
+        // return the new computed centroid
+        return new DatapointHistogram(symbolsMapping, frequencies, newPrecision);
+    }
+
+    private double getSymProbability(int sym) {
         int pos = symbolsMapping.getOrDefault(sym, -1);
-        int f = (pos == -1)? DEFAULT_FREQ : frequencies[pos];
+        int f = (pos == -1) ? DEFAULT_FREQ : frequencies[pos];
         return (double) f / precision;
     }
 
-    public double KLDivergence (DatapointHistogram h) {
+    public double KLDivergence(DatapointHistogram h) {
         double ret = 0, p1, p2;
         int sym;
         for (Int2IntMap.Entry e : symbolsMapping.int2IntEntrySet()) {
@@ -40,13 +81,11 @@ public class DatapointHistogram {
         return ret;
     }
 
-    public double distance (DatapointHistogram h) {
-        return (KLDivergence(h) + h.KLDivergence(this))/2;
+    public double distance(DatapointHistogram h) {
+        return (KLDivergence(h) + h.KLDivergence(this)) / 2;
     }
 
-    @Override
-    public String toString() {
-        String s = "DatapointHistogram, symbols, prob: ";
-
+    public DatapointHistogram copy() {
+        return new DatapointHistogram(symbolsMapping.clone(), frequencies.clone(), precision);
     }
 }

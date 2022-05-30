@@ -52,12 +52,7 @@ public class SymbolStats {
         for ( Int2IntMap.Entry e: freqMap.int2IntEntrySet())
             keys[pos++] = e.getIntKey();
 
-        IntArrays.mergeSort(keys, new IntComparator() {
-            @Override
-            public int compare(int k1, int k2) {
-                return freqMap.get(k2) - freqMap.get(k1);
-            }
-        });
+        IntArrays.mergeSort(keys, (k1, k2) -> freqMap.get(k2) - freqMap.get(k1));
 
         // build symbols mappings
         symbolsMapping = new Int2IntOpenHashMap();
