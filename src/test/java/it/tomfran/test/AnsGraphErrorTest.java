@@ -1,4 +1,4 @@
-package it.tomfran.thesis;
+package it.tomfran.test;
 
 import it.tomfran.thesis.graph.AnsGraph;
 import it.unimi.dsi.webgraph.EFGraph;
@@ -7,7 +7,7 @@ import it.unimi.dsi.webgraph.examples.ErdosRenyiGraph;
 
 import java.io.IOException;
 
-public class ErrorGraph {
+public class AnsGraphErrorTest {
 
     static CharSequence METHOD = "orderStatistic";
 

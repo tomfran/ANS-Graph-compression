@@ -1,4 +1,4 @@
-package it.tomfran.thesis;
+package it.tomfran.test;
 
 import com.sun.security.jgss.GSSUtil;
 import it.tomfran.thesis.ans.*;

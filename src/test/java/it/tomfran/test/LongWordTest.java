@@ -1,4 +1,4 @@
-package it.tomfran.thesis;
+package it.tomfran.test;
 
 import it.tomfran.thesis.io.LongWordBitReader;
 import it.tomfran.thesis.io.LongWordOutputBitStream;

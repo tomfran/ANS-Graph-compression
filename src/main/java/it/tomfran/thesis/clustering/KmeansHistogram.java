@@ -10,7 +10,7 @@ public class KmeansHistogram {
     protected int K;
     protected int iterations;
     protected int n;
-    protected DatapointHistogram[] centroid;
+    public DatapointHistogram[] centroid;
     protected DatapointHistogram[] data;
     protected int[] pointMapping;
     protected int[] clusterCardinality;
@@ -64,7 +64,7 @@ public class KmeansHistogram {
         for (i = 0; i < iterations && !stop; i++) {
 
             if(PROGRESS)
-                System.out.println("- iteration " + (i+1));
+                System.out.println("\t- iteration " + (i+1));
 
             stop = true;
             // for each point, compute the closest centroid

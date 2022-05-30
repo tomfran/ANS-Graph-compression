@@ -2,14 +2,12 @@ package it.tomfran.thesis.clustering;
 
 
 import it.tomfran.thesis.ans.SymbolStats;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.*;
 
 public class DatapointHistogram {
 
     static final int DEFAULT_FREQ = 1;
+    private static final boolean DEBUG = false;
 
     protected Int2IntOpenHashMap symbolsMapping;
     protected int[] frequencies;
@@ -30,6 +28,9 @@ public class DatapointHistogram {
 
     static DatapointHistogram buildCentroidFromCluster(DatapointHistogram[] points, int precision) {
 
+        if (DEBUG)
+            System.out.println("Build from centroid, received " + points.length + " points.");
+
         // get all the symbols in the points
         IntSet mergedKeys = new IntOpenHashSet();
 
@@ -49,16 +50,25 @@ public class DatapointHistogram {
             symbolsMapping.put(e, pos);
             pos++;
         }
-
+        if (DEBUG) {
+            System.out.println("New probability: ");
+            for (double p : prob)
+                System.out.print(p + " ");
+        }
         // build frequency, scaling probability to precision
         // need to compute a new precision as the total might change for the Math.max
         int[] frequencies = new int[k];
         int newPrecision = 0;
         for (int i = 0; i < k; i++) {
-            frequencies[i] = Math.max(1, (int) prob[i] * precision);
+            frequencies[i] = Math.max(1, (int) (prob[i] * precision));
             newPrecision += frequencies[i];
         }
-
+        if (DEBUG) {
+            System.out.println("\nNew frequencies: ");
+            for (int p : frequencies)
+                System.out.print(p + " ");
+            System.out.println();
+        }
         // return the new computed centroid
         return new DatapointHistogram(symbolsMapping, frequencies, newPrecision);
     }
@@ -87,5 +97,14 @@ public class DatapointHistogram {
 
     public DatapointHistogram copy() {
         return new DatapointHistogram(symbolsMapping.clone(), frequencies.clone(), precision);
+    }
+
+    @Override
+    public String toString() {
+        String s = "Datapoint, symlist: \n";
+
+        for (int e : symbolsMapping.keySet())
+            s += "\t -" + e + ": " + getSymProbability(e) + "\n";
+        return s;
     }
 }
