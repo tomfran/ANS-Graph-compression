@@ -1,17 +1,17 @@
 package it.tomfran.thesis.clustering;
 
-import it.tomfran.thesis.ans.SymbolStats;
+import javax.xml.crypto.Data;
 
-public class KmeansHistograms implements Kmeans{
+public class KmeansHistogram {
 
     protected int K;
     protected int iterations;
-    protected HistogramCentroid centroids[];
+    protected DatapointHistogram centroids[];
 
-    public KmeansHistograms(int k, int iterations) {
+    public KmeansHistogram(int k, int iterations) {
         K = k;
         this.iterations = iterations;
-        centroids = new HistogramCentroid[k];
+        centroids = new DatapointHistogram[k];
         initializeCentroids();
     }
 
@@ -19,12 +19,11 @@ public class KmeansHistograms implements Kmeans{
 
     }
 
-    private void updateCentroids(){
+    private void updateCentroids() {
 
     }
 
-    @Override
-    public void fit(Datapoint[] p) {
+    public void fit(DatapointHistogram[] p) {
 
         int n = p.length;
         int centroidMappings[] = new int[n];
@@ -53,8 +52,7 @@ public class KmeansHistograms implements Kmeans{
         }
     }
 
-    @Override
-    public HistogramCentroid predict(Datapoint p) {
+    public DatapointHistogram predict(DatapointHistogram p) {
         int r = 0;
         double minDistance = p.distance(centroids[r]), currDistance;
         for (int k = 1; k < K; k++) {

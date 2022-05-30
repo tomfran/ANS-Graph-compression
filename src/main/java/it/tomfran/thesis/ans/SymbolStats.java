@@ -13,15 +13,15 @@ public class SymbolStats {
     /** Array to scan. */
     protected int[] iterator;
     /** Symbol to index mapping. */
-    protected Int2IntOpenHashMap symbolsMapping;
+    public Int2IntOpenHashMap symbolsMapping;
     /** Index to symbol mapping. */
     protected Int2IntOpenHashMap invSymbolsMapping;
     /** Ordered symbol frequencies. */
-    protected int[] frequencies;
+    public int[] frequencies;
     /** Sum of frequencies. */
     protected int total;
     /** Power of two to approximate frequencies. */
-    protected int precision;
+    public int precision;
 
     /**
      * Build symbols statistics from an int array.
@@ -33,7 +33,7 @@ public class SymbolStats {
     public SymbolStats(int[] iterator, int length, int d) {
         this.iterator = iterator;
         this.length = length;
-        precision = 2 << d;
+        precision = 1 << d;
         buildFrequencies();
     }
 
