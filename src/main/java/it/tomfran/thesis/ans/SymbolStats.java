@@ -1,10 +1,8 @@
 package it.tomfran.thesis.ans;
 
-import it.unimi.dsi.fastutil.Arrays;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrays;
-import it.unimi.dsi.fastutil.ints.IntComparator;
 
 public class SymbolStats {
 
@@ -49,7 +47,7 @@ public class SymbolStats {
         // sort elements by value
         int[] keys = new int[n];
         int pos = 0;
-        for ( Int2IntMap.Entry e: freqMap.int2IntEntrySet())
+        for (Int2IntMap.Entry e : freqMap.int2IntEntrySet())
             keys[pos++] = e.getIntKey();
 
         IntArrays.mergeSort(keys, (k1, k2) -> freqMap.get(k2) - freqMap.get(k1));

@@ -1,6 +1,10 @@
 package it.tomfran.thesis.graph;
 
-import it.tomfran.thesis.ans.*;
+import it.tomfran.thesis.ans.AnsEncoder;
+import it.tomfran.thesis.ans.AnsModel;
+import it.tomfran.thesis.ans.AnsModelOrderStatistic;
+import it.tomfran.thesis.ans.SymbolStats;
+import it.tomfran.thesis.clustering.KmeansHistogram;
 import it.tomfran.thesis.io.LongWordBitReader;
 import it.tomfran.thesis.io.LongWordOutputBitStream;
 import it.unimi.dsi.fastutil.longs.LongBigList;
@@ -20,7 +24,6 @@ import java.nio.channels.FileChannel;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Properties;
 
 import static it.unimi.dsi.webgraph.EFGraph.loadLongBigList;
@@ -28,28 +31,25 @@ import static java.lang.Math.max;
 
 public class AnsGraph extends ImmutableGraph {
 
-    private static final boolean PROGRESS = true;
-    private static final boolean DEBUG = false;
-    private static final boolean ANSDEBUG = false;
-    private static final boolean ORDERSTATSDEBUG = false;
-
-
     public static final String GRAPH_EXTENSION = ".graph";
     public static final String OFFSETS_EXTENSION = ".offset";
     public static final String MODEL_EXTENSION = ".model";
     public static final String PROPERTIES_EXTENSION = ".properties";
-
     public static final int P_RANGE = 6;
+    private static final boolean PROGRESS = false;
+    private static final boolean DEBUG = false;
+    private static final boolean ANSDEBUG = false;
+    private static final boolean ORDERSTATSDEBUG = false;
 
+    /** Elias fano sequence for the offsets. */
+    public LongBigList offsets;
     /** Number of nodes. */
     protected int numNodes;
     /** Array with the And models used in the graph. */
     protected AnsModel[] ansModels;
-    /** Elias fano sequence for the offsets. */
-    public LongBigList offsets;
     /** Long big list containing the ecnoded graph. */
     protected LongBigList graph;
-    /** LongWordBitReader to read outdegrees. */
+    /** LongWordBitReader to read outdegrees.*/
     protected LongWordBitReader outdegreeLongWordBitReader;
 
     public AnsGraph(int numNodes, AnsModel[] ansModels, LongBigList offsets, LongBigList graph, LongWordBitReader outdegreeLongWordBitReader) {
@@ -60,47 +60,22 @@ public class AnsGraph extends ImmutableGraph {
         this.outdegreeLongWordBitReader = outdegreeLongWordBitReader;
     }
 
-    /** Utility class to read a list of delta encoded longs. */
-    private final static class OffsetsLongIterator implements LongIterator {
-        private final InputBitStream offsetIbs;
-        private final long n;
-        private long offset;
-        private long i;
+    public static void store(ImmutableGraph graph, CharSequence basename, int clusters, int iterations) throws IOException {
+        // build the kmeans data points for this graph
 
-        private OffsetsLongIterator(final InputBitStream offsetIbs, final long n) {
-            this.offsetIbs = offsetIbs;
-            this.n = n;
-            offset = 0;
-        }
+        // run Kmeans with the given number of clusters
 
-        @Override
-        public boolean hasNext() {
-            return i <= n;
-        }
+        KmeansHistogram model = new KmeansHistogram(clusters, iterations, null);
+        // store internal with the clustering model
+        storeInternal(graph, basename, "cluster", model);
 
-        @Override
-        public long nextLong() {
-            if (!hasNext()) throw new NoSuchElementException();
-            i++;
-            try {
-                return offset += offsetIbs.readLongDelta();
-//                return offsetIbs.readLongDelta();
-
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
+    public static void store(ImmutableGraph graph, CharSequence basename) throws IOException {
+        storeInternal(graph, basename, "optimal", null);
+    }
 
-    /**
-     * Store an immutable graph using ans.
-     *
-     * @param graph graph to store.
-     * @param basename disk path.
-     * @throws IOException
-     */
-    public static void store(ImmutableGraph graph, CharSequence basename, CharSequence method) throws IOException {
+    public static void storeInternal(ImmutableGraph graph, CharSequence basename, CharSequence method, KmeansHistogram model) throws IOException {
 
         ByteOrder byteOrder = ByteOrder.nativeOrder();
 
@@ -149,17 +124,18 @@ public class AnsGraph extends ImmutableGraph {
                 if (method == "optimal") {
                     SymbolStats symStats = new SymbolStats(succ, outdegree, P_RANGE);
                     m = new AnsModel(symStats);
-                } else if (method == "orderStatistic") {
-                    int[] sortedSucc = Arrays.copyOf(succ, outdegree);
-                    Arrays.sort(sortedSucc);
-                    if (ORDERSTATSDEBUG) {
-                        System.out.println("GRAPH STORE: outdegree: " + outdegree);
-                        System.out.println(sortedSucc[outdegree / 2] + " " + sortedSucc[(int) (outdegree * 0.75)] + " " + sortedSucc[outdegree - 1]);
-                    }
-                    m = new AnsModelOrderStatistic(sortedSucc[outdegree / 2],
-                            sortedSucc[(int) (outdegree * 0.75)],
-                            sortedSucc[outdegree - 1], P_RANGE);
                 }
+//                else if (method == "orderStatistic") {
+//                    int[] sortedSucc = Arrays.copyOf(succ, outdegree);
+//                    Arrays.sort(sortedSucc);
+//                    if (ORDERSTATSDEBUG) {
+//                        System.out.println("GRAPH STORE: outdegree: " + outdegree);
+//                        System.out.println(sortedSucc[outdegree / 2] + " " + sortedSucc[(int) (outdegree * 0.75)] + " " + sortedSucc[outdegree - 1]);
+//                    }
+//                    m = new AnsModelOrderStatistic(sortedSucc[outdegree / 2],
+//                            sortedSucc[(int) (outdegree * 0.75)],
+//                            sortedSucc[outdegree - 1], P_RANGE);
+//                }
                 AnsEncoder e = new AnsEncoder(m);
                 e.encodeAll(succ, outdegree);
                 // model id, state count, statelist to .graph file
@@ -268,13 +244,13 @@ public class AnsGraph extends ImmutableGraph {
 
         String method = properties.getProperty("method");
 
-        System.out.println("method: " + method);
+//        System.out.println("method: " + method);
         // each model is rebuilt reading the necessary info from the file
         for (int i = 0; i < numModels; i++) {
-            if (method.equals("optimal"))
-                ansModels[i] = AnsModel.rebuildModel(modelLongWordReader);
-            else if (method.equals("orderStatistic"))
-                ansModels[i] = AnsModelOrderStatistic.rebuildModel(modelLongWordReader);
+//            if (method.equals("optimal"))
+            ansModels[i] = AnsModel.rebuildModel(modelLongWordReader);
+//            else if (method.equals("orderStatistic"))
+//                ansModels[i] = AnsModelOrderStatistic.rebuildModel(modelLongWordReader);
         }
 
         LongBigList graph = loadLongBigList(basename + GRAPH_EXTENSION, byteOrder);
@@ -333,5 +309,39 @@ public class AnsGraph extends ImmutableGraph {
     @Override
     public ImmutableGraph copy() {
         return null;
+    }
+
+    /**
+     * Utility class to read a list of delta encoded longs.
+     */
+    private final static class OffsetsLongIterator implements LongIterator {
+        private final InputBitStream offsetIbs;
+        private final long n;
+        private long offset;
+        private long i;
+
+        private OffsetsLongIterator(final InputBitStream offsetIbs, final long n) {
+            this.offsetIbs = offsetIbs;
+            this.n = n;
+            offset = 0;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return i <= n;
+        }
+
+        @Override
+        public long nextLong() {
+            if (!hasNext()) throw new NoSuchElementException();
+            i++;
+            try {
+                return offset += offsetIbs.readLongDelta();
+//                return offsetIbs.readLongDelta();
+
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

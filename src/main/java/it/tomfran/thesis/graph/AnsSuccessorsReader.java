@@ -1,28 +1,38 @@
 package it.tomfran.thesis.graph;
 
 import it.tomfran.thesis.ans.AnsDecoder;
-import it.tomfran.thesis.ans.AnsEncoder;
 import it.tomfran.thesis.ans.AnsModel;
 import it.tomfran.thesis.io.LongWordBitReader;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongBigArrayBigList;
 import it.unimi.dsi.fastutil.longs.LongBigList;
 import it.unimi.dsi.webgraph.LazyIntIterator;
 
 public class AnsSuccessorsReader implements LazyIntIterator {
 
     private static final boolean DEBUG = false;
-    /** Successors to read. */
+    /**
+     * Successors to read.
+     */
     protected int n;
-    /** AnsModel to use. */
+    /**
+     * AnsModel to use.
+     */
     protected AnsModel model;
-    /** Decoded to unpack the sequence. */
+    /**
+     * Decoded to unpack the sequence.
+     */
     protected AnsDecoder decoder;
-    /** Graph to load the required states. */
+    /**
+     * Graph to load the required states.
+     */
     protected LongBigList graph;
-    /** Node offset in the graph stream. */
+    /**
+     * Node offset in the graph stream.
+     */
     protected long offset;
-    /** LongWordBitReader to access the grpah stream. */
+    /**
+     * LongWordBitReader to access the grpah stream.
+     */
     protected LongWordBitReader graphLongWordBitReader;
 
     private int base;
@@ -32,9 +42,9 @@ public class AnsSuccessorsReader implements LazyIntIterator {
     /**
      * Build a new successors reader.
      *
-     * @param n Outdegree of the node.
-     * @param model AnsModel to use.
-     * @param graph Graph stream loaded as a long list.
+     * @param n      Outdegree of the node.
+     * @param model  AnsModel to use.
+     * @param graph  Graph stream loaded as a long list.
      * @param offset Offset of the node in the graph.
      */
     public AnsSuccessorsReader(int n, AnsModel model, LongBigList graph, long offset) {
@@ -48,7 +58,7 @@ public class AnsSuccessorsReader implements LazyIntIterator {
         buildDecoder();
     }
 
-    private void buildDecoder(){
+    private void buildDecoder() {
         if (DEBUG) System.out.println("AnsSuccessorsReader: offset: " + offset);
         graphLongWordBitReader.position(offset);
         // read the outdegree and the model id, throw them away

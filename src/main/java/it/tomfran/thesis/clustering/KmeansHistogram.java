@@ -4,13 +4,12 @@ import static it.tomfran.thesis.clustering.DatapointHistogram.buildCentroidFromC
 
 public class KmeansHistogram {
 
-    private static final boolean PROGRESS = true;
     protected static final int CLUSTER_BUILD_PRECISION = 2048;
-
+    private static final boolean PROGRESS = true;
+    public DatapointHistogram[] centroid;
     protected int K;
     protected int iterations;
     protected int n;
-    public DatapointHistogram[] centroid;
     protected DatapointHistogram[] data;
     protected int[] pointMapping;
     protected int[] clusterCardinality;
@@ -63,8 +62,8 @@ public class KmeansHistogram {
         int i;
         for (i = 0; i < iterations && !stop; i++) {
 
-            if(PROGRESS)
-                System.out.println("\t- iteration " + (i+1));
+            if (PROGRESS)
+                System.out.println("\t- iteration " + (i + 1));
 
             stop = true;
             // for each point, compute the closest centroid
@@ -87,7 +86,7 @@ public class KmeansHistogram {
             // rebuild centroids according to new clusters
             updateCentroids();
         }
-        if(PROGRESS) {
+        if (PROGRESS) {
             if (i < iterations)
                 System.out.println("Early termination");
             System.out.println("Clustering completed");

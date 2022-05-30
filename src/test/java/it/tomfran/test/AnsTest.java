@@ -1,12 +1,10 @@
 package it.tomfran.test;
 
-import com.sun.security.jgss.GSSUtil;
 import it.tomfran.thesis.ans.*;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Random;
 
 
@@ -64,7 +62,7 @@ public class AnsTest {
         return ans;
     }
 
-    public static double getBits (AnsEncoder e) {
+    public static double getBits(AnsEncoder e) {
         return 64 * e.normCount / (double) len;
     }
 
@@ -104,13 +102,13 @@ public class AnsTest {
     public void orderStatisticModelDebug() {
         System.out.println("Order statistics model test");
 
-        int list[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        int[] list = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 //        int list[] = {3, 3, 3, 3, 5, 5, 5};
         int len = list.length;
         int median, thirdquartile, max;
-        median = list[len/2];
+        median = list[len / 2];
         thirdquartile = list[(int) (len * 0.75)];
-        max = list[len-1];
+        max = list[len - 1];
         System.out.println("List stats: \nmed: " + median + " tq: " + thirdquartile + " max: " + max);
 //        AnsModelOrderStatistic m = new AnsModelOrderStatistic(median, thirdquartile, max, 1024);
         AnsModelOrderStatistic m = new AnsModelOrderStatistic(1, 2, 5, 1024);
@@ -129,9 +127,9 @@ public class AnsTest {
         int median, thirdquartile, max;
         double avgBits = 0;
         for (int i = 0; i < runPerModel; i++) {
-            median = numList[len/2];
+            median = numList[len / 2];
             thirdquartile = numList[(int) (len * 0.75)];
-            max = numList[len-1];
+            max = numList[len - 1];
 
             AnsModelOrderStatistic m = new AnsModelOrderStatistic(median, thirdquartile, max, 1024);
 

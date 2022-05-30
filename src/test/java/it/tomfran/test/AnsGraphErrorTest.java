@@ -9,13 +9,11 @@ import java.io.IOException;
 
 public class AnsGraphErrorTest {
 
-    static CharSequence METHOD = "orderStatistic";
-
     static void genGraph(int n, double e) throws IOException {
 
         ErdosRenyiGraph g = new ErdosRenyiGraph(n, e);
         String filename = "data/error/ans";
-        AnsGraph.store(g, filename, METHOD);
+        AnsGraph.store(g, filename);
         String f2 = "data/error/ef";
         EFGraph.store(g, f2);
     }
@@ -36,18 +34,18 @@ public class AnsGraphErrorTest {
             LazyIntIterator i1 = ef.successors(i);
             LazyIntIterator i2 = ans.successors(i);
 
-            if (ef.outdegree(i) != ans.outdegree(i)){
+            if (ef.outdegree(i) != ans.outdegree(i)) {
                 System.out.println("Oudegree mismatch");
                 return false;
             }
             for (int j = 0; j < ans.outdegree(i); j++) {
-                if( i1.nextInt() != i2.nextInt()){
-                    System.out.println("Successors mismatch on node: " +  i);
+                if (i1.nextInt() != i2.nextInt()) {
+                    System.out.println("Successors mismatch on node: " + i);
                     return false;
                 }
             }
 
-            if(i2.nextInt() != -1){
+            if (i2.nextInt() != -1) {
                 System.out.println("Iterator not returning -1");
                 return false;
             }
@@ -74,27 +72,27 @@ public class AnsGraphErrorTest {
         EFGraph ef = EFGraph.load(f2);
         System.out.println(ef);
         System.out.println("### Storing with ANS");
-        AnsGraph.store(ef, "data/error/ans", METHOD);
+        AnsGraph.store(ef, "data/error/ans");
         System.out.println("\n\n REBUILDING \n\n");
         AnsGraph ag = AnsGraph.load("data/error/ans");
         System.out.println(ag);
     }
 
     public static void main(String[] args) throws IOException {
-        final boolean GEN = true;
+        final boolean GEN = false;
 
         boolean check = true;
         int from, to, p, pergen;
-        from = 10000;
+        from = 5;
         p = 10000;
-        to = 100000;
+        to = 5;
         pergen = 10;
         if (GEN)
-        for (int n = from; n <= to && check; n+=p) {
+            for (int n = from; n <= to && check; n += p) {
                 System.out.println("GEN:" + n);
                 for (int i = 0; i < pergen && check; i++) {
 //                    System.out.println("\n\n#######\n\n");
-                    genGraph(n, 0.001);
+                    genGraph(n, 0.5);
                     if (!check()) {
                         System.err.println("###### ERROR FOUND");
                         check = false;
@@ -103,9 +101,8 @@ public class AnsGraphErrorTest {
 
             }
 //        inspect();
-//        storeTest();
+        storeTest();
     }
-
 
 
 }

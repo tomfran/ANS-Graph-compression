@@ -1,5 +1,6 @@
 package it.tomfran.thesis.ans;
 
+import it.tomfran.thesis.graph.AnsGraph;
 import it.tomfran.thesis.io.LongWordBitReader;
 import it.tomfran.thesis.io.LongWordOutputBitStream;
 
@@ -57,6 +58,7 @@ public class AnsModelOrderStatistic extends AnsModel {
             medM = (int) (0.5 * M);
             tqM = (int) (0.75 * M);
         }
+//        System.out.println(this);
     }
 
     public static AnsModel rebuildModel(LongWordBitReader br) {
@@ -66,7 +68,7 @@ public class AnsModelOrderStatistic extends AnsModel {
         thirdquartile = median + (int) br.readGamma();
         max = thirdquartile + (int) br.readGamma();
 
-        return new AnsModelOrderStatistic(median, thirdquartile, max, 1024);
+        return new AnsModelOrderStatistic(median, thirdquartile, max, AnsGraph.P_RANGE);
     }
 
     @Override
@@ -104,6 +106,7 @@ public class AnsModelOrderStatistic extends AnsModel {
 
     @Override
     public int getRemainderSym(int r) {
+        System.out.println("Received R: " + r);
         if (r <= medM)
             return (r - 1) / medFs;
 
@@ -126,5 +129,20 @@ public class AnsModelOrderStatistic extends AnsModel {
     @Override
     public AnsModel copy() {
         return new AnsModelOrderStatistic(median, thirdquartile, maxValue, M);
+    }
+
+
+    @Override
+    public String toString() {
+        return "AnsModelOrderStatistic{" +
+                "medFs=" + medFs +
+                ", tqFs=" + tqFs +
+                ", otherFs=" + otherFs +
+                ", medM=" + medM +
+                ", tqM=" + tqM +
+                ", median=" + median +
+                ", thirdquartile=" + thirdquartile +
+                ", maxValue=" + maxValue +
+                '}';
     }
 }

@@ -14,7 +14,6 @@ import java.nio.channels.FileChannel;
 
 import static it.unimi.dsi.webgraph.EFGraph.loadLongBigList;
 import static java.lang.Math.max;
-import static java.lang.Math.subtractExact;
 
 public class LongWordTest {
 
@@ -77,7 +76,7 @@ public class LongWordTest {
         off[0] = 0;
         for (int i = 0; i < 1000; i++) {
             if (i == 42)
-                off[i] = graphStream.writeGamma(i+8000) + off[max(0, i - 1)];
+                off[i] = graphStream.writeGamma(i + 8000) + off[max(0, i - 1)];
             else
                 off[i] = graphStream.writeGamma(i) + off[max(0, i - 1)];
 
