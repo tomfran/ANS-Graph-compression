@@ -12,9 +12,9 @@ public class ClusteringTest {
     static int sampleLen = 50;
     static DatapointHistogram[] data;
     static Random rand = new Random(0);
-    static int[][] dist = {{1, 1, 1, 1, 2, 2, 3, 4},
-            {1, 2, 3, 4},
-            {1, 1, 2, 2, 2, 2, 2}};
+    static int[][] dist = {{1, 1, 1, 1, 2, 2, 3, 4, 9876},
+            {1, 2, 3, 4, 2143},
+            {1, 1, 2, 2, 2, 2, 2, 73281}};
 
     static DatapointHistogram getSample(int i) {
         int[] sample = new int[sampleLen];
@@ -34,10 +34,6 @@ public class ClusteringTest {
 
     public static void main(String[] args) {
         generateDatapoints();
-        System.out.println(data[0]);
-        System.out.println(data[12]);
-        System.out.println(data[23]);
-
         System.out.println("Starting with clustering");
         KmeansHistogram k = new KmeansHistogram(3, 10, data);
         k.fit();

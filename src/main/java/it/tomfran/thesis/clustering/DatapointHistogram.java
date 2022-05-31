@@ -2,19 +2,17 @@ package it.tomfran.thesis.clustering;
 
 
 import it.tomfran.thesis.ans.SymbolStats;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.*;
 
 public class DatapointHistogram {
 
     static final int DEFAULT_FREQ = 1;
     private static final boolean DEBUG = false;
+    private static final boolean PROGRESS = false;
 
-    protected Int2IntOpenHashMap symbolsMapping;
-    protected int[] frequencies;
-    protected int precision;
+    public Int2IntOpenHashMap symbolsMapping;
+    public int[] frequencies;
+    public int precision;
 
 
     public DatapointHistogram(SymbolStats s) {
@@ -30,16 +28,19 @@ public class DatapointHistogram {
     }
 
     static DatapointHistogram buildCentroidFromCluster(DatapointHistogram[] points, int precision) {
-
-        if (DEBUG)
+        if (PROGRESS)
             System.out.println("Build from centroid, received " + points.length + " points.");
 
         // get all the symbols in the points
         IntSet mergedKeys = new IntOpenHashSet();
 
-        for (DatapointHistogram p : points)
+        for (DatapointHistogram p : points) {
+//            if (p == null) {
+//                System.out.println("NULL SYMBOLS MAPPING FOUND ");
+//                continue;
+//            }
             mergedKeys.addAll(p.symbolsMapping.keySet());
-
+        }
         // build the centroid probability distribution
         // as the average of all the distributions
         Int2IntOpenHashMap symbolsMapping = new Int2IntOpenHashMap();
@@ -47,8 +48,9 @@ public class DatapointHistogram {
         int pos = 0, n = points.length, k = mergedKeys.size();
         double[] prob = new double[k];
         for (int e : mergedKeys) {
-            for (DatapointHistogram p : points)
-                prob[pos] += p.getSymProbability(e);
+            for (int i = 0; i < points.length; i++)
+                prob[pos] += points[i].getSymProbability(e);
+
             prob[pos] /= n;
             symbolsMapping.put(e, pos);
             pos++;
@@ -94,6 +96,22 @@ public class DatapointHistogram {
         return ret;
     }
 
+    public void sortFrequencies() {
+
+        int[] keys = new int[frequencies.length];
+        int pos = 0;
+        for (int e : symbolsMapping.keySet())
+            keys[pos++] = e;
+        // sort keys by frequency
+        IntArrays.mergeSort(keys, (k1, k2) -> frequencies[symbolsMapping.get(k2)] - frequencies[symbolsMapping.get(k1)]);
+        // sort frequencies
+        IntArrays.mergeSort(frequencies, (k1, k2) -> k2 - k1);
+        // rebuild mapping
+        for (int i = 0; i < keys.length; i++)
+            symbolsMapping.put(keys[i], i);
+
+    }
+
     public double distance(DatapointHistogram h) {
         return (KLDivergence(h) + h.KLDivergence(this)) / 2;
     }
@@ -104,10 +122,12 @@ public class DatapointHistogram {
 
     @Override
     public String toString() {
-        String s = "Datapoint, symlist: \n";
-
-        for (int e : symbolsMapping.keySet())
-            s += "\t -" + e + ": " + getSymProbability(e) + "\n";
-        return s;
+        String s = "Datapoint, "+frequencies.length + " symbols.\nFrequencies: ";
+        for (int e : frequencies)
+            s += e + " ";
+//        s += "\nSymlist: \n";
+//        for (int e : symbolsMapping.keySet())
+//            s += "\t sym: " + String.format("%6d", e) + " prob: " + String.format("%1.3f", getSymProbability(e)) + " index: " + symbolsMapping.get(e) +  "\n";
+        return s + "\n";
     }
 }

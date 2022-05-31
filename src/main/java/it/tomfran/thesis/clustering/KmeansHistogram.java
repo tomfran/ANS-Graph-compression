@@ -7,7 +7,7 @@ public class KmeansHistogram {
     protected static final int CLUSTER_BUILD_PRECISION = 2048;
     private static final boolean PROGRESS = true;
     public DatapointHistogram[] centroid;
-    protected int K;
+    public int K;
     protected int iterations;
     protected int n;
     protected DatapointHistogram[] data;
@@ -21,7 +21,6 @@ public class KmeansHistogram {
         this.data = data;
         pointMapping = new int[n];
         clusterCardinality = new int[k];
-        clusterCardinality[0] = n;
         centroid = new DatapointHistogram[k];
         initializeCentroids();
     }
@@ -32,9 +31,20 @@ public class KmeansHistogram {
     }
 
     private void updateCentroids() {
-        for (int i = 0; i < K; i++)
+        for (int i = 0; i < K; i++) {
+            if (PROGRESS) {
+                if ((i % 100) == 0)
+                    System.out.println("Cluster num: " + i);
+                i++;
+            }
             centroid[i] = buildCentroidFromCluster(getClusterPoints(i),
                     CLUSTER_BUILD_PRECISION);
+        }
+    }
+
+    private void sortCentroidsFrequencies() {
+        for (int i = 0; i < K; i++)
+            centroid[i].sortFrequencies();
     }
 
     private DatapointHistogram[] getClusterPoints(int i) {
@@ -42,12 +52,11 @@ public class KmeansHistogram {
 
         int pos = 0;
         for (int j = 0; j < n; j++)
-            if (pointMapping[j] == i)
+            if (pointMapping[j] == i) {
                 ret[pos++] = data[j];
-
+            }
         return ret;
     }
-
 
     public void fit() {
 
@@ -57,7 +66,7 @@ public class KmeansHistogram {
         boolean stop = false;
 
         double minDistance, currDistance;
-
+        clusterCardinality[0] = n;
         // for each iteration
         int i;
         for (i = 0; i < iterations && !stop; i++) {
@@ -83,15 +92,45 @@ public class KmeansHistogram {
                     }
                 }
             }
+            if (PROGRESS)
+                System.out.println("Updating centroids");
             // rebuild centroids according to new clusters
             updateCentroids();
         }
+        sortCentroidsFrequencies();
         if (PROGRESS) {
             if (i < iterations)
                 System.out.println("Early termination");
             System.out.println("Clustering completed");
         }
     }
+
+
+    public void lazyFit() {
+        if (PROGRESS)
+            System.out.println("Lazy clustering");
+        for (int i = 0; i < n; i++) {
+            pointMapping[i] = (i%K);
+            clusterCardinality[(i % K)] ++;
+        }
+        if (PROGRESS)
+            System.out.println("Clustering completed\nUpdating centroids");
+
+        updateCentroids();
+        if (PROGRESS)
+            System.out.println("Sorting frequencies");
+
+        sortCentroidsFrequencies();
+    }
+
+    public DatapointHistogram getCluster (int index) {
+        return centroid[pointMapping[index]];
+    }
+
+    public int getClusterIndex (int index) {
+        return pointMapping[index];
+    }
+
 
     public DatapointHistogram predict(DatapointHistogram p) {
         int r = 0;

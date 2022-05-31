@@ -24,27 +24,40 @@ public class AnsGraphTest {
             LazyIntIterator i1 = g.successors(i);
             LazyIntIterator i2 = ans.successors(i);
 
-            if (g.outdegree(i) != ans.outdegree(i)) return false;
+            if (g.outdegree(i) != ans.outdegree(i)) {
+                System.out.println("Oudegree error for node " + i);
+                return false;
+            }
             for (int j = 0; j < ans.outdegree(i); j++)
-                if (i1.nextInt() != i2.nextInt()) return false;
+                if (i1.nextInt() != i2.nextInt()) {
+                    System.out.println("Successors error for node " + i);
+                    return false;
+                }
 
-            if (i2.nextInt() != -1) return false;
+            if (i2.nextInt() != -1) {
+                System.out.println("Expected -1 for node  " + i);
+                return false;
+            }
         }
         return true;
     }
 
     public static void main(String[] args) {
         try {
-//            ImmutableGraph g = BVGraph.load("data/wiki/enwiki-2013");
-//            AnsGraph.store(g, "data/wiki/ans/" + METHOD + "_enwiki-2013", METHOD);
-//            AnsGraph ans = AnsGraph.load("data/wiki/ans/"+ METHOD + "_enwiki-2013");
+            int K = 2500;
+            ImmutableGraph g = BVGraph.load("data/wiki/enwiki-2013");
+            EFGraph.store(g, "data/wiki/EF_enwiki-2013");
+//            AnsGraph.store(g, "data/wiki/ans/enwiki-2013");
+
+//            AnsGraph.store(g, "data/wiki/ans/" + K + "clusters_enwiki-2013_NEW", K, 10);
+//            AnsGraph ans = AnsGraph.load("data/wiki/ans/" + K + "clusters_enwiki-2013_NEW");
 //
-            ImmutableGraph g = EFGraph.load("data/uk100/EF_UK");
-            AnsGraph.store(g, "data/uk100/ans/uk100");
-            AnsGraph ans = AnsGraph.load("data/uk100/ans/uk100");
+//            ImmutableGraph g = EFGraph.load("data/uk100/EF_UK");
+//            AnsGraph.store(g, "data/uk100/ans/uk100", K, 10);
+//            AnsGraph ans = AnsGraph.load("data/uk100/ans/uk100");
 //
-            System.out.println("Integrity check for the two graphs: " +
-                    integrityCheck(g, ans));
+//            System.out.println("Integrity check for the two graphs: " +
+//                    integrityCheck(g, ans));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

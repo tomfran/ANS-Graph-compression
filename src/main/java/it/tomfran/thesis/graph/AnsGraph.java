@@ -4,6 +4,7 @@ import it.tomfran.thesis.ans.AnsEncoder;
 import it.tomfran.thesis.ans.AnsModel;
 import it.tomfran.thesis.ans.AnsModelOrderStatistic;
 import it.tomfran.thesis.ans.SymbolStats;
+import it.tomfran.thesis.clustering.DatapointHistogram;
 import it.tomfran.thesis.clustering.KmeansHistogram;
 import it.tomfran.thesis.io.LongWordBitReader;
 import it.tomfran.thesis.io.LongWordOutputBitStream;
@@ -35,11 +36,8 @@ public class AnsGraph extends ImmutableGraph {
     public static final String OFFSETS_EXTENSION = ".offset";
     public static final String MODEL_EXTENSION = ".model";
     public static final String PROPERTIES_EXTENSION = ".properties";
-    public static final int P_RANGE = 6;
-    private static final boolean PROGRESS = false;
-    private static final boolean DEBUG = false;
-    private static final boolean ANSDEBUG = false;
-    private static final boolean ORDERSTATSDEBUG = false;
+    public static final int P_RANGE = 5;
+    private static final boolean PROGRESS = true;
 
     /** Elias fano sequence for the offsets. */
     public LongBigList offsets;
@@ -51,6 +49,7 @@ public class AnsGraph extends ImmutableGraph {
     protected LongBigList graph;
     /** LongWordBitReader to read outdegrees.*/
     protected LongWordBitReader outdegreeLongWordBitReader;
+
 
     public AnsGraph(int numNodes, AnsModel[] ansModels, LongBigList offsets, LongBigList graph, LongWordBitReader outdegreeLongWordBitReader) {
         this.numNodes = numNodes;
@@ -64,8 +63,7 @@ public class AnsGraph extends ImmutableGraph {
         // build the kmeans data points for this graph
 
         // run Kmeans with the given number of clusters
-
-        KmeansHistogram model = new KmeansHistogram(clusters, iterations, null);
+        KmeansHistogram model = computeClusters(graph, clusters, iterations);
         // store internal with the clustering model
         storeInternal(graph, basename, "cluster", model);
 
@@ -98,12 +96,21 @@ public class AnsGraph extends ImmutableGraph {
 
         int N = graph.numNodes();
 
-        // the model id for now is the index of the node
         long current = 0;
         long prev = 0;
         int modelNum = 0;
         int i;
         if (PROGRESS) i = 0;
+
+        AnsModel[] clusterModel = null;
+        if (method == "cluster"){
+            clusterModel = new AnsModel[model.K];
+            for (int j = 0; j < model.K; j++) {
+                clusterModel[j] = new AnsModel(model.centroid[j]);
+                modelBits += clusterModel[j].dump(modelStream);
+            }
+        }
+
         for (final NodeIterator nodeIterator = graph.nodeIterator(); nodeIterator.hasNext(); ) {
             if (PROGRESS) {
                 if ((i % 10000) == 0) {
@@ -124,26 +131,21 @@ public class AnsGraph extends ImmutableGraph {
                 if (method == "optimal") {
                     SymbolStats symStats = new SymbolStats(succ, outdegree, P_RANGE);
                     m = new AnsModel(symStats);
+                } else if (method == "cluster") {
+                    m = clusterModel[model.getClusterIndex(modelNum)];
                 }
-//                else if (method == "orderStatistic") {
-//                    int[] sortedSucc = Arrays.copyOf(succ, outdegree);
-//                    Arrays.sort(sortedSucc);
-//                    if (ORDERSTATSDEBUG) {
-//                        System.out.println("GRAPH STORE: outdegree: " + outdegree);
-//                        System.out.println(sortedSucc[outdegree / 2] + " " + sortedSucc[(int) (outdegree * 0.75)] + " " + sortedSucc[outdegree - 1]);
-//                    }
-//                    m = new AnsModelOrderStatistic(sortedSucc[outdegree / 2],
-//                            sortedSucc[(int) (outdegree * 0.75)],
-//                            sortedSucc[outdegree - 1], P_RANGE);
-//                }
                 AnsEncoder e = new AnsEncoder(m);
                 e.encodeAll(succ, outdegree);
                 // model id, state count, statelist to .graph file
-                stateBits += e.dump(graphStream, modelNum);
+
+                if (method =="optimal") {
+                    stateBits += e.dump(graphStream, modelNum);
+                    modelBits += m.dump(modelStream);
+                } else if(method =="cluster") {
+                    stateBits += e.dump(graphStream, model.getClusterIndex(modelNum));
+                }
                 modelNum++;
                 // write model to .model file
-                modelBits += m.dump(modelStream);
-
                 numStates += e.stateList.size();
                 maxStates = max(maxStates, e.stateList.size());
 
@@ -154,11 +156,14 @@ public class AnsGraph extends ImmutableGraph {
             prev = outdegreeBits + stateBits;
         }
 
+
         graphStream.close();
         modelStream.close();
         offsets.close();
 
         final DecimalFormat format = new java.text.DecimalFormat("0.###");
+
+        if (method == "cluster") modelNum = clusterModel.length;
 
         long writtenBits = outdegreeBits + stateBits + modelBits;
 
@@ -207,6 +212,36 @@ public class AnsGraph extends ImmutableGraph {
         return ret;
     }
 
+    public static KmeansHistogram computeClusters(ImmutableGraph g, int k, int iterations){
+
+        int n = 0;
+        for (final NodeIterator nodeIterator = g.nodeIterator(); nodeIterator.hasNext(); ) {
+            nodeIterator.nextInt();
+            if (nodeIterator.outdegree() > 0) n++;
+        }
+        DatapointHistogram[] data = new DatapointHistogram[n];
+
+        int pos = 0;
+        for (final NodeIterator nodeIterator = g.nodeIterator(); nodeIterator.hasNext(); ) {
+            nodeIterator.nextInt();
+            int outdegree = nodeIterator.outdegree();
+            if (outdegree > 0){
+                int[] succ = computeGaps(nodeIterator.successorArray(), outdegree);
+                data[pos++] = new DatapointHistogram(new SymbolStats(succ, outdegree, P_RANGE));
+            }
+        }
+
+        KmeansHistogram clusteringModel = new KmeansHistogram(k, iterations, data);
+//        clusteringModel.fit();
+        clusteringModel.lazyFit();
+//
+//        for (DatapointHistogram c : clusteringModel.centroid)
+//            System.out.println(c);
+
+        return clusteringModel;
+    }
+
+
     /**
      * Load an ans encoded graph.
      *
@@ -243,6 +278,7 @@ public class AnsGraph extends ImmutableGraph {
         LongWordBitReader modelLongWordReader = new LongWordBitReader(modelsLongList, l);
 
         String method = properties.getProperty("method");
+        System.out.println("Method: " + method);
 
 //        System.out.println("method: " + method);
         // each model is rebuilt reading the necessary info from the file
@@ -252,7 +288,6 @@ public class AnsGraph extends ImmutableGraph {
 //            else if (method.equals("orderStatistic"))
 //                ansModels[i] = AnsModelOrderStatistic.rebuildModel(modelLongWordReader);
         }
-
         LongBigList graph = loadLongBigList(basename + GRAPH_EXTENSION, byteOrder);
 
         // load offsets

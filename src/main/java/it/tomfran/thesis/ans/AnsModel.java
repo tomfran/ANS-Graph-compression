@@ -1,5 +1,6 @@
 package it.tomfran.thesis.ans;
 
+import it.tomfran.thesis.clustering.DatapointHistogram;
 import it.tomfran.thesis.io.LongWordBitReader;
 import it.tomfran.thesis.io.LongWordOutputBitStream;
 import it.unimi.dsi.fastutil.ints.*;
@@ -25,9 +26,6 @@ public class AnsModel {
     /** Symbols array. */
     protected EliasFanoIndexedMonotoneLongBigList sym;
 
-    public AnsModel() {
-    }
-
     /**
      * Build an Ans model from a symbol stats object.
      * @param s SymbolStats instance
@@ -44,6 +42,26 @@ public class AnsModel {
         buildCumulativeSymbols();
     }
 
+
+    public AnsModel(DatapointHistogram centroid) {
+        // this fields are common
+        this.symbolsMapping = centroid.symbolsMapping;
+        this.frequencies = centroid.frequencies;
+        M = centroid.precision;
+
+        // invert the mapping
+        invSymbolsMapping = new Int2IntOpenHashMap();
+        for( Int2IntMap.Entry e : this.symbolsMapping.int2IntEntrySet())
+            invSymbolsMapping.put(e.getIntValue(), e.getIntKey());
+
+        // build cumulative
+        N = this.frequencies.length;
+        buildCumulativeSymbols();
+    }
+
+    public AnsModel() {
+
+    }
 
     public void buildCumulativeSymbols() {
         cumulative = new int[N];
