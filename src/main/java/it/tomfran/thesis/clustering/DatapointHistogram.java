@@ -3,6 +3,7 @@ package it.tomfran.thesis.clustering;
 
 import it.tomfran.thesis.ans.SymbolStats;
 import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.sux4j.util.EliasFanoIndexedMonotoneLongBigList;
 
 public class DatapointHistogram {
 
@@ -11,8 +12,11 @@ public class DatapointHistogram {
     private static final boolean PROGRESS = false;
 
     public Int2IntOpenHashMap symbolsMapping;
+    public Int2IntOpenHashMap invSymbolsMapping;
     public int[] frequencies;
     public int precision;
+    public int[] cumulative;
+    public EliasFanoIndexedMonotoneLongBigList sym;
 
 
     public DatapointHistogram(SymbolStats s) {
@@ -86,9 +90,7 @@ public class DatapointHistogram {
 
     public double KLDivergence(DatapointHistogram h) {
         double ret = 0, p1, p2;
-        int sym;
-        for (Int2IntMap.Entry e : symbolsMapping.int2IntEntrySet()) {
-            sym = e.getIntKey();
+        for (int sym : symbolsMapping.keySet()) {
             p1 = getSymProbability(sym);
             p2 = h.getSymProbability(sym);
             ret += p1 * Math.log(p1 / p2);
@@ -96,9 +98,11 @@ public class DatapointHistogram {
         return ret;
     }
 
-    public void sortFrequencies() {
+    public void buildAnsStructures() {
 
-        int[] keys = new int[frequencies.length];
+        int N = frequencies.length;
+
+        int[] keys = new int[N];
         int pos = 0;
         for (int e : symbolsMapping.keySet())
             keys[pos++] = e;
@@ -106,9 +110,22 @@ public class DatapointHistogram {
         IntArrays.mergeSort(keys, (k1, k2) -> frequencies[symbolsMapping.get(k2)] - frequencies[symbolsMapping.get(k1)]);
         // sort frequencies
         IntArrays.mergeSort(frequencies, (k1, k2) -> k2 - k1);
-        // rebuild mapping
-        for (int i = 0; i < keys.length; i++)
+
+        // rebuild mapping anmd inverse mapping
+        invSymbolsMapping = new Int2IntOpenHashMap();
+        for (int i = 0; i < N; i++) {
             symbolsMapping.put(keys[i], i);
+            invSymbolsMapping.put(i, keys[i]);
+        }
+
+        cumulative = new int[N];
+        cumulative[0] = 1;
+
+        for (int i = 1; i < N; i++)
+            cumulative[i] = cumulative[i - 1] + frequencies[i - 1];
+
+        // sym
+        sym = new EliasFanoIndexedMonotoneLongBigList(new IntArrayList(cumulative));
 
     }
 

@@ -47,16 +47,11 @@ public class AnsModel {
         // this fields are common
         this.symbolsMapping = centroid.symbolsMapping;
         this.frequencies = centroid.frequencies;
+        this.invSymbolsMapping = centroid.invSymbolsMapping;
+        this.cumulative = centroid.cumulative;
+        this.sym = centroid.sym;
         M = centroid.precision;
-
-        // invert the mapping
-        invSymbolsMapping = new Int2IntOpenHashMap();
-        for( Int2IntMap.Entry e : this.symbolsMapping.int2IntEntrySet())
-            invSymbolsMapping.put(e.getIntValue(), e.getIntKey());
-
-        // build cumulative
         N = this.frequencies.length;
-        buildCumulativeSymbols();
     }
 
     public AnsModel() {
@@ -132,6 +127,7 @@ public class AnsModel {
         for (int i = 0; i < N; i++) {
             written += modelStream.writeGamma(invSymbolsMapping.get(i));
         }
+
         // write frequencies in reverse order by gap
         int prev = 0;
         for (int i = frequencies.length-1; i >= 0; i--) {

@@ -44,20 +44,15 @@ public class AnsGraphTest {
 
     public static void main(String[] args) {
         try {
-            int K = 2500;
-            ImmutableGraph g = BVGraph.load("data/wiki/enwiki-2013");
-            EFGraph.store(g, "data/wiki/EF_enwiki-2013");
-//            AnsGraph.store(g, "data/wiki/ans/enwiki-2013");
 
-//            AnsGraph.store(g, "data/wiki/ans/" + K + "clusters_enwiki-2013_NEW", K, 10);
-//            AnsGraph ans = AnsGraph.load("data/wiki/ans/" + K + "clusters_enwiki-2013_NEW");
-//
-//            ImmutableGraph g = EFGraph.load("data/uk100/EF_UK");
-//            AnsGraph.store(g, "data/uk100/ans/uk100", K, 10);
-//            AnsGraph ans = AnsGraph.load("data/uk100/ans/uk100");
-//
-//            System.out.println("Integrity check for the two graphs: " +
-//                    integrityCheck(g, ans));
+            ImmutableGraph g = BVGraph.load("data/it-wiki/bv/itwiki-2013");
+//            EFGraph.store(g, "data/it-wiki/ef/itwiki-2013");
+//            AnsGraph.store(g, "data/it-wiki/optimal_ans/itwiki-2013");
+
+            for (int k = 50; k <= 50; k += 10) {
+                AnsGraph.store(g, "data/it-wiki/clustered_ans/" + k + "_itwiki-2013_contiguous", k, 0);
+            }
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

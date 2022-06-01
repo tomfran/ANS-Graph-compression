@@ -33,18 +33,16 @@ public class KmeansHistogram {
     private void updateCentroids() {
         for (int i = 0; i < K; i++) {
             if (PROGRESS) {
-                if ((i % 100) == 0)
-                    System.out.println("Cluster num: " + i);
-                i++;
+                System.out.println("Cluster num: " + i + " cluster points: " + clusterCardinality[i]);
             }
             centroid[i] = buildCentroidFromCluster(getClusterPoints(i),
                     CLUSTER_BUILD_PRECISION);
         }
     }
 
-    private void sortCentroidsFrequencies() {
+    private void buildCentroidAnsStructures() {
         for (int i = 0; i < K; i++)
-            centroid[i].sortFrequencies();
+            centroid[i].buildAnsStructures();
     }
 
     private DatapointHistogram[] getClusterPoints(int i) {
@@ -63,20 +61,24 @@ public class KmeansHistogram {
         if (PROGRESS)
             System.out.println("Kmeans Clustering:");
 
+        lazyFit(false);
+
         boolean stop = false;
 
         double minDistance, currDistance;
-        clusterCardinality[0] = n;
         // for each iteration
         int i;
         for (i = 0; i < iterations && !stop; i++) {
 
             if (PROGRESS)
-                System.out.println("\t- iteration " + (i + 1));
+                System.out.println("- iteration " + (i + 1));
 
             stop = true;
             // for each point, compute the closest centroid
             for (int j = 0; j < n; j++) {
+                if (PROGRESS)
+                    if (j % 10000 == 0 && j > 0)
+                        System.out.println("datapoint number: " + j);
                 // current distance from the centroid
                 minDistance = data[j].distance(centroid[pointMapping[j]]);
                 // find the closest centroid and update distance
@@ -92,12 +94,15 @@ public class KmeansHistogram {
                     }
                 }
             }
-            if (PROGRESS)
-                System.out.println("Updating centroids");
+            if (PROGRESS) {
+                System.out.println("\tCentroid assignments: ");
+                for (int j = 0; j < K; j++)
+                    System.out.println("\t- centroid " + j + ": " + clusterCardinality[j]);
+            }
             // rebuild centroids according to new clusters
             updateCentroids();
         }
-        sortCentroidsFrequencies();
+        buildCentroidAnsStructures();
         if (PROGRESS) {
             if (i < iterations)
                 System.out.println("Early termination");
@@ -106,21 +111,29 @@ public class KmeansHistogram {
     }
 
 
-    public void lazyFit() {
+    public void lazyFit(boolean sorting) {
         if (PROGRESS)
             System.out.println("Lazy clustering");
+        int interval = n/(K-1);
+
+        int index;
         for (int i = 0; i < n; i++) {
-            pointMapping[i] = (i%K);
-            clusterCardinality[(i % K)] ++;
+            index = i / interval;
+
+            pointMapping[i] = index;
+            clusterCardinality[index] ++;
         }
+
         if (PROGRESS)
-            System.out.println("Clustering completed\nUpdating centroids");
+            System.out.println("Lazy clustering completed\nUpdating centroids");
 
         updateCentroids();
-        if (PROGRESS)
-            System.out.println("Sorting frequencies");
 
-        sortCentroidsFrequencies();
+        if (sorting) {
+            if (PROGRESS)
+                System.out.println("Sorting frequencies");
+            buildCentroidAnsStructures();
+        }
     }
 
     public DatapointHistogram getCluster (int index) {

@@ -13,7 +13,7 @@ public class AnsGraphErrorTest {
 
         ErdosRenyiGraph g = new ErdosRenyiGraph(n, e);
         String filename = "data/error/ans";
-        AnsGraph.store(g, filename, 10, 0);
+        AnsGraph.store(g, filename);
         String f2 = "data/error/ef";
         EFGraph.store(g, f2);
     }
@@ -83,16 +83,16 @@ public class AnsGraphErrorTest {
 
         boolean check = true;
         int from, to, p, pergen;
-        from = 1000;
-        p = 1000;
-        to = 10000;
-        pergen = 10;
+        from = 100000;
+        p = 100000;
+        to = 1000000;
+        pergen = 1;
         if (GEN)
             for (int n = from; n <= to && check; n += p) {
                 System.out.println("GEN:" + n);
                 for (int i = 0; i < pergen && check; i++) {
 //                    System.out.println("\n\n#######\n\n");
-                    genGraph(n, 0.1);
+                    genGraph(n, 0.0001);
                     if (!check()) {
                         System.out.println("###### ERROR FOUND");
                         System.exit(1);

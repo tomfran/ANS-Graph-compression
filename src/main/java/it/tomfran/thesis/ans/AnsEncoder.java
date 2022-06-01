@@ -48,12 +48,13 @@ public class AnsEncoder {
         j = Long.divideUnsigned(state, fs);
         r = Long.remainderUnsigned(state, fs);
 
-        try {
-            long res = Math.multiplyExact(j, model.M);
-            res = Math.addExact(res, (cs+r));
-            state = res;
-        } catch (ArithmeticException e) {
-//            System.out.println("OVERFLOW PREVENTED");
+        long newState = j * model.M;
+        long upperBits = Math.multiplyHigh(j, model.M);
+        // if the multiplication or the sum overflows, normalize
+
+        if (upperBits == 0 && (Long.MAX_VALUE - newState) > (cs+r)) {
+            state = newState + cs + r;
+        } else {
             normalize();
             j = Long.divideUnsigned(state, fs);
             r = Long.remainderUnsigned(state, fs);
