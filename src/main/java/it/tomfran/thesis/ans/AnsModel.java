@@ -26,6 +26,8 @@ public class AnsModel {
     /** Symbols array. */
     protected EliasFanoIndexedMonotoneLongBigList sym;
 
+    public int escapeIndex;
+
     /**
      * Build an Ans model from a symbol stats object.
      * @param s SymbolStats instance
@@ -39,6 +41,7 @@ public class AnsModel {
         // cumulative
         N = frequencies.length;
         M = s.total;
+        escapeIndex = s.escapeIndex;
         buildCumulativeSymbols();
     }
 
@@ -70,7 +73,9 @@ public class AnsModel {
     }
 
     public int getSymbolMapping (int sym) {
-        return symbolsMapping.get(sym);
+        // if the symbol is escaped, it isn't in the symbols mapping, thus the
+        // index of the escape sym is returned
+        return symbolsMapping.getOrDefault(sym, escapeIndex);
     }
 
     public int getInvSymbolMapping (int sym) {
@@ -98,6 +103,9 @@ public class AnsModel {
         for (Map.Entry<Integer, Integer> e : invSymbolsMapping.int2IntEntrySet())
             System.out.println(e.getKey() + "->" + e.getValue());
 
+        System.out.println("----- Escape index -----");
+        System.out.println(escapeIndex);
+
         System.out.println("---- Frequencies -----------");
         for (int i = 0; i < N; i++)
             System.out.print(frequencies[i] + " ");
@@ -109,7 +117,7 @@ public class AnsModel {
         System.out.println();
 
         System.out.println("---- SYM ------------");
-        System.out.print(sym);
+        System.out.println(sym);
     }
 
     /**
@@ -124,9 +132,16 @@ public class AnsModel {
 
         // write N, and N symbols
         written += modelStream.writeGamma(N);
-        for (int i = 0; i < N; i++) {
-            written += modelStream.writeGamma(invSymbolsMapping.get(i));
-        }
+        // write escape index, then the remaining symbols
+        if (escapeIndex >= 0) {
+            written += modelStream.writeGamma(1);
+            written += modelStream.writeGamma(escapeIndex);
+        } else
+            written += modelStream.writeGamma(0);
+
+        for (int i = 0; i < N; i++)
+            if (i != escapeIndex)
+                written += modelStream.writeGamma(invSymbolsMapping.get(i));
 
         // write frequencies in reverse order by gap
         int prev = 0;
@@ -152,12 +167,23 @@ public class AnsModel {
         m.symbolsMapping = new Int2IntOpenHashMap();
         m.invSymbolsMapping = new Int2IntOpenHashMap();
 
+        // read the escape mode, 1 means escaping, 0 means no escaping
+        int escapeIndex = -1;
+        if ((int) br.readGamma() == 1) {
+            escapeIndex = (int) br.readGamma();
+            m.symbolsMapping.put(SymbolStats.ESCAPE_SYMBOL, escapeIndex);
+            m.invSymbolsMapping.put(escapeIndex, SymbolStats.ESCAPE_SYMBOL);
+        }
+
+        m.escapeIndex = escapeIndex;
         int a;
         for (int i = 0; i < m.N; i++) {
+            if (i == escapeIndex) continue;
             a = (int) br.readGamma();
             m.symbolsMapping.put(a, i);
             m.invSymbolsMapping.put(i, a);
         }
+
         // read frequencies, reverse by gap
         m.frequencies = new int[m.N];
         m.M = 0;
@@ -186,6 +212,7 @@ public class AnsModel {
         m.invSymbolsMapping = invSymbolsMapping.clone();
         m.frequencies = frequencies.clone();
         m.cumulative = cumulative.clone();
+        m.escapeIndex = escapeIndex;
         // TODO: check clone in ELIASfano..
         m.sym = sym;
         return m;

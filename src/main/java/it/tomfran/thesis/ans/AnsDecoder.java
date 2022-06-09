@@ -13,6 +13,10 @@ public class AnsDecoder {
     protected LongArrayList stateList;
     /** index of the current state. */
     protected int stateIndex;
+    /** Escaped symbols. */
+    public IntArrayList escapedSymbols;
+    public int escapedSymbolPos;
+    public int escapeIndex;
 
     /**
      * Build a decoder starting from a model, a state list and a state count.
@@ -21,11 +25,14 @@ public class AnsDecoder {
      * @param sl State list.
      * @param sc Number of states.
      */
-    public AnsDecoder(AnsModel m, LongArrayList sl, int sc) {
+    public AnsDecoder(AnsModel m, LongArrayList sl, int sc, IntArrayList es, int ei) {
         model = m;
         stateIndex = 0;
         stateList = sl;
         stateCount = sc;
+        escapedSymbols = es;
+        escapedSymbolPos = 0;
+        escapeIndex = ei;
     }
 
     /**
@@ -67,6 +74,8 @@ public class AnsDecoder {
         // if current state is over, change to next one
         if (Long.compareUnsigned(stateList.getLong(stateIndex), 0L) == 0)
             stateIndex++;
+
+        if (symIndex == escapeIndex) return escapedSymbols.getInt(escapedSymbolPos++);
 
         return model.getInvSymbolMapping(symIndex);
     }

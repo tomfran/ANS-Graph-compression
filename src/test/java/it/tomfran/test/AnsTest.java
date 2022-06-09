@@ -1,6 +1,7 @@
 package it.tomfran.test;
 
 import it.tomfran.thesis.ans.*;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.junit.jupiter.api.Test;
 
@@ -47,12 +48,16 @@ public class AnsTest {
         assert i == len + 1;
     }
 
-    public static AnsDecoder buildDecoder(LongArrayList a, int len, AnsModel m1) {
+    public static AnsDecoder buildDecoder(LongArrayList a, int len, IntArrayList escapedSymbol, int size, AnsModel m1) {
         LongArrayList a1 = new LongArrayList();
         for (int i = len - 1; i >= 0; i--)
             a1.add(a.getLong(i));
 
-        return new AnsDecoder(m1, a1, len);
+        IntArrayList a2 = new IntArrayList();
+        for (int i = size - 1; i >= 0; i--)
+            a2.add(escapedSymbol.getInt(i));
+
+        return new AnsDecoder(m1, a1, len, a2, m1.escapeIndex);
     }
 
     public static AnsEncoder buildEncoder(AnsModel m, int[] l, int len) {
@@ -74,7 +79,7 @@ public class AnsTest {
             AnsModelEquiprobable m = new AnsModelEquiprobable(maxNum);
 
             AnsEncoder ans = buildEncoder(m, numList, len);
-            AnsDecoder dec1 = buildDecoder(ans.stateList, ans.normCount, m);
+            AnsDecoder dec1 = buildDecoder(ans.stateList, ans.normCount, ans.escapedSymbolList, ans.escapedSymbolList.size(), m);
             avgBits += getBits(ans);
             decodeCheck(dec1, numList, len);
         }
@@ -87,10 +92,10 @@ public class AnsTest {
         System.out.println("Optimal model test");
         double avgBits = 0;
         for (int i = 0; i < runPerModel; i++) {
-            SymbolStats s = new SymbolStats(numList, len, 10);
+            SymbolStats s = new SymbolStats(numList, len, 10, 2, 2);
             AnsModel m = new AnsModel(s);
             AnsEncoder ans = buildEncoder(m, numList, len);
-            AnsDecoder dec = buildDecoder(ans.stateList, ans.normCount, m);
+            AnsDecoder dec = buildDecoder(ans.stateList, ans.normCount, ans.escapedSymbolList, ans.escapedSymbolList.size(), m);
             decodeCheck(dec, numList, len);
             avgBits += getBits(ans);
         }
@@ -134,7 +139,7 @@ public class AnsTest {
             AnsModelOrderStatistic m = new AnsModelOrderStatistic(median, thirdquartile, max, 1024);
 
             AnsEncoder ans = buildEncoder(m, numList, len);
-            AnsDecoder dec = buildDecoder(ans.stateList, ans.normCount, m);
+            AnsDecoder dec = buildDecoder(ans.stateList, ans.normCount, ans.escapedSymbolList, ans.escapedSymbolList.size(), m);
             avgBits += getBits(ans);
             decodeCheck(dec, numList, len);
         }

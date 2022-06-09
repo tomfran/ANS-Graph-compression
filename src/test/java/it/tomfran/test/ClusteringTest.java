@@ -22,7 +22,7 @@ public class ClusteringTest {
             int pos = rand.nextInt(dist[i].length);
             sample[j] = dist[i][pos];
         }
-        return new DatapointHistogram(new SymbolStats(sample, sampleLen, 10));
+        return new DatapointHistogram(new SymbolStats(sample, sampleLen, 10, 0, 0));
     }
 
     static void generateDatapoints() {

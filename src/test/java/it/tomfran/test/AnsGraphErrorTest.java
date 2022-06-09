@@ -79,20 +79,20 @@ public class AnsGraphErrorTest {
     }
 
     public static void main(String[] args) throws IOException {
-        final boolean GEN = true;
+        final boolean GEN = false;
 
         boolean check = true;
         int from, to, p, pergen;
-        from = 100000;
-        p = 100000;
-        to = 1000000;
-        pergen = 1;
+        from = 10;
+        p = 1;
+        to = 30;
+        pergen = 100;
         if (GEN)
             for (int n = from; n <= to && check; n += p) {
                 System.out.println("GEN:" + n);
                 for (int i = 0; i < pergen && check; i++) {
 //                    System.out.println("\n\n#######\n\n");
-                    genGraph(n, 0.0001);
+                    genGraph(n, 0.8);
                     if (!check()) {
                         System.out.println("###### ERROR FOUND");
                         System.exit(1);
@@ -101,7 +101,7 @@ public class AnsGraphErrorTest {
                 }
 
             }
-//        inspect();
+        inspect();
 //        storeTest();
     }
 

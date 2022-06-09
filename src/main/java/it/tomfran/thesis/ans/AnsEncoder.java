@@ -1,6 +1,7 @@
 package it.tomfran.thesis.ans;
 
 import it.tomfran.thesis.io.LongWordOutputBitStream;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 
 import java.io.IOException;
@@ -20,6 +21,10 @@ public class AnsEncoder {
     protected long state;
     /** List of states. */
     public LongArrayList stateList;
+    /** Minimum escape sym. */
+    public int escapeIndex;
+    /** List of escaped symbolds. */
+    public IntArrayList escapedSymbolList;
 
 
     /**
@@ -31,6 +36,8 @@ public class AnsEncoder {
         state = 0;
         normCount = 0;
         stateList = new LongArrayList();
+        escapedSymbolList = new IntArrayList();
+        escapeIndex = m.escapeIndex;
     }
 
     /**
@@ -39,9 +46,13 @@ public class AnsEncoder {
      */
     public void encode(int s) {
         int fs, cs, symIndex;
-        long j, r, stateTmp;
+        long j, r;
         // get freq and cumulative
         symIndex = model.getSymbolMapping(s);
+
+        if (symIndex == escapeIndex)
+            escapedSymbolList.add(s);
+
         fs = model.getFrequency(symIndex);
         cs = model.getCumulative(symIndex);
         // update the state
@@ -90,24 +101,27 @@ public class AnsEncoder {
      * @return Number of bits written.
      * @throws IOException
      */
-    public long dump(LongWordOutputBitStream os, int modelId) throws IOException {
+    public long dump(LongWordOutputBitStream os, int modelId, int escapeBits) throws IOException {
         long written = 0;
         written += os.writeGamma(modelId);
         written += os.writeGamma(normCount);
         if (DUMPDEBUG) debugPrint();
-        for (int i = normCount - 1; i >= 0; i--) {
-            written += os.append(stateList.getLong(i), 63);
-        }
-        // this could prevent the erorr while reading the state
-        written += os.writeGamma(0);
+        for (int i = normCount - 1; i >= 0; i--) written += os.append(stateList.getLong(i), 63);
+        written += os.writeGamma(escapedSymbolList.size());
+        for (int i = escapedSymbolList.size() - 1; i >= 0 ; i--) written += os.append(escapedSymbolList.getInt(i), escapeBits);
         return written;
     }
 
     public void debugPrint(){
-        System.out.println("AnsEncoder: state list: ");
-        for (Long e : stateList){
-            System.out.println("\t- " + e);
-        }
+        System.out.println("AnsEncoder " + stateList.size() + " total states: ");
+//        for (Long e : stateList){
+//            System.out.println("\t- " + e);
+//        }
+        System.out.println("AnsEncoder " + escapedSymbolList.size() + " escaped symbols: ");
+//        for (int e : escapedSymbol){
+//            System.out.println(e + ", ");
+//        }
+        System.out.println();
     }
 
 }

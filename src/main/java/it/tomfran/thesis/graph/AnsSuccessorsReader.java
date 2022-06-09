@@ -3,6 +3,7 @@ package it.tomfran.thesis.graph;
 import it.tomfran.thesis.ans.AnsDecoder;
 import it.tomfran.thesis.ans.AnsModel;
 import it.tomfran.thesis.io.LongWordBitReader;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongBigList;
 import it.unimi.dsi.webgraph.LazyIntIterator;
@@ -35,6 +36,8 @@ public class AnsSuccessorsReader implements LazyIntIterator {
      */
     protected LongWordBitReader graphLongWordBitReader;
 
+    protected int escapeBits;
+
     private int base;
     private int consumed;
 
@@ -47,11 +50,12 @@ public class AnsSuccessorsReader implements LazyIntIterator {
      * @param graph  Graph stream loaded as a long list.
      * @param offset Offset of the node in the graph.
      */
-    public AnsSuccessorsReader(int n, AnsModel model, LongBigList graph, long offset) {
+    public AnsSuccessorsReader(int n, AnsModel model, LongBigList graph, long offset, int escapeBits) {
         this.n = n;
         this.model = model;
         this.graph = graph;
         this.offset = offset;
+        this.escapeBits = escapeBits;
         base = 0;
         consumed = 0;
         graphLongWordBitReader = new LongWordBitReader(graph, 0);
@@ -76,7 +80,14 @@ public class AnsSuccessorsReader implements LazyIntIterator {
             if (DEBUG) System.out.println("\t- " + sl.getLong(i));
         }
 
-        decoder = new AnsDecoder(model, sl, numStates);
+        int escapedLen = (int) graphLongWordBitReader.readGamma();
+        IntArrayList es = new IntArrayList(escapedLen);
+        for (int i = 0; i < escapedLen; i++) {
+            es.add(i, (int) graphLongWordBitReader.readState(escapeBits));
+        }
+
+
+        decoder = new AnsDecoder(model, sl, numStates, es, model.escapeIndex);
     }
 
     @Override

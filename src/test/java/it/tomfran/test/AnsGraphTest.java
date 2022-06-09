@@ -20,7 +20,7 @@ public class AnsGraphTest {
 
         int interval = 10000;
         for (int i = 0; i < ans.numNodes(); i++) {
-            if ((i % interval) == 0) System.out.println("Node: " + i);
+//            if ((i % interval) == 0) System.out.println("Node: " + i);
             LazyIntIterator i1 = g.successors(i);
             LazyIntIterator i2 = ans.successors(i);
 
@@ -31,8 +31,14 @@ public class AnsGraphTest {
             for (int j = 0; j < ans.outdegree(i); j++)
                 if (i1.nextInt() != i2.nextInt()) {
                     System.out.println("Successors error for node " + i);
+                    int s1[], s2[];
+                    s1 = g.successorArray(i);
+                    s2 = ans.successorArray(i);
+                    for (int k = 0; k < g.outdegree(i); k++) System.out.print(s1[k] + ", "); System.out.println("\n\n");
+                    for (int k = 0; k < g.outdegree(i); k++) System.out.print(s2[k] + ", "); System.out.println();
                     return false;
                 }
+
 
             if (i2.nextInt() != -1) {
                 System.out.println("Expected -1 for node  " + i);
@@ -45,12 +51,13 @@ public class AnsGraphTest {
     public static void main(String[] args) {
         try {
 
+//            ImmutableGraph g = BVGraph.load("data/it-wiki/bv/itwiki-2013");
             ImmutableGraph g = BVGraph.load("data/it-wiki/bv/itwiki-2013");
-//            EFGraph.store(g, "data/it-wiki/ef/itwiki-2013");
-//            AnsGraph.store(g, "data/it-wiki/optimal_ans/itwiki-2013");
-
-            for (int k = 50; k <= 50; k += 10) {
-                AnsGraph.store(g, "data/it-wiki/clustered_ans/" + k + "_itwiki-2013_contiguous", k, 0);
+            for (int i = 0; i <= 100; i+=5 ) {
+                System.out.println(i);
+                AnsGraph.storeEscape(g, "data/it-wiki/escaped_ans/" + String.format("%03d", i) + "_itwiki-2013", i, i);
+//                System.out.print(i + ": ");
+//                System.out.println(integrityCheck(g, AnsGraph.load("data/it-wiki/escaped_ans/" + i + "_itwiki-2013")));
             }
 
         } catch (IOException e) {
