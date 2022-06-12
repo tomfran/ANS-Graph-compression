@@ -113,6 +113,8 @@ public class AnsGraph extends ImmutableGraph {
         if (PROGRESS) i = 0;
 
         long lostBits = 0;
+        long avgEscapeBits = 0;
+        long writtenEscapeBits = 0;
 
         // if clustering is selected, write all models to the stream
         if (method == "cluster"){
@@ -145,12 +147,19 @@ public class AnsGraph extends ImmutableGraph {
                     m = new AnsModel(model.centroid[clusterPos]);
                 }
                 AnsEncoder e = new AnsEncoder(m);
-                // compute lost bits writing escapes
-
                 e.encodeAll(succ, outdegree);
+                // compute lost bits writing escapes
+                int minBits = 0;
                 for (int k : e.escapedSymbolList) {
-                    lostBits += (escapeBits - Math.max(0, ((int) (Math.log(k) / Math.log(2) + 1))));
+                    minBits = max(minBits, (int) (Math.log(k) / Math.log(2) + 1));
                 }
+                for (int k: e.escapedSymbolList){
+                    lostBits += (minBits - Math.max(0, ((int) (Math.log(k) / Math.log(2) + 1))));
+                }
+                avgEscapeBits += minBits;
+                writtenEscapeBits += minBits * e.escapedSymbolList.size();
+
+
                 // model id, state count, statelist to .graph file
                 if (method =="optimal") {
                     stateBits += e.dump(graphStream, modelNum, escapeBits);
@@ -187,11 +196,12 @@ public class AnsGraph extends ImmutableGraph {
         properties.setProperty("nodes", String.valueOf(N));
         properties.setProperty("arcs", String.valueOf(numArcs));
         properties.setProperty("byteorder", byteOrder.toString());
-        properties.setProperty("escapeBits", String.valueOf(escapeBits));
+        properties.setProperty("escapebits", String.valueOf(escapeBits));
+        properties.setProperty("avgescapebits", format.format((double)avgEscapeBits / N));
         properties.setProperty("bitsformodels", String.valueOf(modelBits));
         properties.setProperty("bitsforoutdegrees", String.valueOf(outdegreeBits));
-        properties.setProperty("bitsforstates", String.valueOf(stateBits - numEscapes * escapeBits));
-        properties.setProperty("bitsforescapes", format.format(numEscapes * escapeBits));
+        properties.setProperty("bitsforstates", String.valueOf(stateBits - writtenEscapeBits));
+        properties.setProperty("bitsforescapes", format.format(writtenEscapeBits));
         properties.setProperty("lostbitsforescapes", String.valueOf(lostBits));
         properties.setProperty("avglostbitsforescapes", format.format((double)lostBits / N));
         properties.setProperty("writtenbits", String.valueOf(writtenBits));
@@ -289,7 +299,7 @@ public class AnsGraph extends ImmutableGraph {
 
         // num nodes
         final int nodes = Integer.parseInt(properties.getProperty("nodes"));
-        final int escapeBits = Integer.parseInt(properties.getProperty("escapeBits"));
+        final int escapeBits = Integer.parseInt(properties.getProperty("escapebits"));
 
 
         // byte order

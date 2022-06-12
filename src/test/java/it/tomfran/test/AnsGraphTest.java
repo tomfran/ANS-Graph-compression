@@ -7,6 +7,7 @@ import it.unimi.dsi.webgraph.ImmutableGraph;
 import it.unimi.dsi.webgraph.LazyIntIterator;
 import it.unimi.dsi.webgraph.algo.StronglyConnectedComponents;
 import it.unimi.dsi.webgraph.examples.ErdosRenyiGraph;
+import it.unimi.dsi.webgraph.test.SpeedTest;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -52,12 +53,12 @@ public class AnsGraphTest {
         try {
 
 //            ImmutableGraph g = BVGraph.load("data/it-wiki/bv/itwiki-2013");
-            ImmutableGraph g = BVGraph.load("data/it-wiki/bv/itwiki-2013");
+            ImmutableGraph g = BVGraph.load("data/en-wiki/bv/enwiki-2013");
             for (int i = 0; i <= 100; i+=5 ) {
                 System.out.println(i);
-                AnsGraph.storeEscape(g, "data/it-wiki/escaped_ans/" + String.format("%03d", i) + "_itwiki-2013", i, i);
+                AnsGraph.storeEscape(g, "data/en-wiki/escaped_ans/" + String.format("%03d", i) + "_enwiki-2013", i, i);
 //                System.out.print(i + ": ");
-//                System.out.println(integrityCheck(g, AnsGraph.load("data/it-wiki/escaped_ans/" + i + "_itwiki-2013")));
+//                System.out.println(integrityCheck(g, AnsGraph.load("data/it-wiki/escaped_ans/" + String.format("%03d", i) + "_itwiki-2013")));
             }
 
         } catch (IOException e) {

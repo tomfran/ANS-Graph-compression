@@ -80,10 +80,11 @@ public class AnsSuccessorsReader implements LazyIntIterator {
             if (DEBUG) System.out.println("\t- " + sl.getLong(i));
         }
 
+        int k = (int) graphLongWordBitReader.readGamma();
         int escapedLen = (int) graphLongWordBitReader.readGamma();
         IntArrayList es = new IntArrayList(escapedLen);
         for (int i = 0; i < escapedLen; i++) {
-            es.add(i, (int) graphLongWordBitReader.readState(escapeBits));
+            es.add(i, (int) graphLongWordBitReader.readState(k));
         }
 
 

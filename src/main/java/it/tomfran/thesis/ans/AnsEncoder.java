@@ -107,8 +107,13 @@ public class AnsEncoder {
         written += os.writeGamma(normCount);
         if (DUMPDEBUG) debugPrint();
         for (int i = normCount - 1; i >= 0; i--) written += os.append(stateList.getLong(i), 63);
+        int minBits = 0;
+        for (int e : escapedSymbolList)
+            minBits = Math.max(minBits, (int) (Math.log(e) / Math.log(2) + 1));
+
+        written += os.writeGamma(minBits);
         written += os.writeGamma(escapedSymbolList.size());
-        for (int i = escapedSymbolList.size() - 1; i >= 0 ; i--) written += os.append(escapedSymbolList.getInt(i), escapeBits);
+        for (int i = escapedSymbolList.size() - 1; i >= 0 ; i--) written += os.append(escapedSymbolList.getInt(i), minBits);
         return written;
     }
 
