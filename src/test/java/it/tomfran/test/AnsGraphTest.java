@@ -7,7 +7,6 @@ import it.unimi.dsi.webgraph.ImmutableGraph;
 import it.unimi.dsi.webgraph.LazyIntIterator;
 import it.unimi.dsi.webgraph.algo.StronglyConnectedComponents;
 import it.unimi.dsi.webgraph.examples.ErdosRenyiGraph;
-import it.unimi.dsi.webgraph.test.SpeedTest;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -52,15 +51,24 @@ public class AnsGraphTest {
     public static void main(String[] args) {
         try {
 
+            String graphDir = "uk2014";
+            String graphName = "uk-2014-tpd";
+            String bvPath = "data/" + graphDir + "/bv/" + graphName;
+            String efPath = "data/" + graphDir + "/ef/" + graphName;
+            String ansPath;
 //            ImmutableGraph g = BVGraph.load("data/it-wiki/bv/itwiki-2013");
-            ImmutableGraph g = BVGraph.load("data/en-wiki/bv/enwiki-2013");
-            for (int i = 0; i <= 100; i+=5 ) {
-                System.out.println(i);
-                AnsGraph.storeEscape(g, "data/en-wiki/escaped_ans/" + String.format("%03d", i) + "_enwiki-2013", i, i);
-//                System.out.print(i + ": ");
-//                System.out.println(integrityCheck(g, AnsGraph.load("data/it-wiki/escaped_ans/" + String.format("%03d", i) + "_itwiki-2013")));
-            }
+//            ImmutableGraph g = BVGraph.load("data/it-wiki/bv/itwiki-2013");
+            ImmutableGraph g = BVGraph.load(bvPath);
+            EFGraph.store(g, efPath);
 
+//            ImmutableGraph g = BVGraph.load("data/uk100/bv/uk100");
+//            System.out.println(g.numNodes());
+//            for (int i = 10; i <= 30; i += 5) {
+////                System.out.println("i: " + i);
+//                ansPath = "data/" + graphDir + "/escaped_opt_for_symchange/" + String.format("%03d", i) + "_" + graphName;
+//                AnsGraph.storeEscape(g, ansPath, i, i);
+////                System.out.println(integrityCheck(g, AnsGraph.load(ansPath)));
+//            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

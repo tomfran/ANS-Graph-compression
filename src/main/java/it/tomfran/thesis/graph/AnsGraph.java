@@ -37,10 +37,11 @@ public class AnsGraph extends ImmutableGraph {
     public static final String MODEL_EXTENSION = ".model";
     public static final String PROPERTIES_EXTENSION = ".properties";
     public static final int P_RANGE = 10;
-    private static final boolean PROGRESS = false;
     public static final int ESCAPE_THRESHOLD_PERCENTAGE = 25;
     public static final int ESCAPE_FREQUENCY = 25;
+    private static final boolean PROGRESS = false;
 
+    public int escapeBits;
     /** Elias fano sequence for the offsets. */
     public LongBigList offsets;
     /** Number of nodes. */
@@ -51,8 +52,6 @@ public class AnsGraph extends ImmutableGraph {
     protected LongBigList graph;
     /** LongWordBitReader to read outdegrees.*/
     protected LongWordBitReader outdegreeLongWordBitReader;
-
-    public int escapeBits;
 
 
     public AnsGraph(int numNodes, AnsModel[] ansModels, LongBigList offsets, LongBigList graph, LongWordBitReader outdegreeLongWordBitReader, int escapeBits) {
@@ -71,7 +70,6 @@ public class AnsGraph extends ImmutableGraph {
         KmeansHistogram model = computeClusters(graph, clusters, iterations);
         // store internal with the clustering model
         storeInternal(graph, basename, "cluster", model, 0, 0);
-
     }
 
     public static void storeEscape(ImmutableGraph graph, CharSequence basename, int escapePercentage, int escapeFrequency) throws IOException {
@@ -99,25 +97,30 @@ public class AnsGraph extends ImmutableGraph {
         //offsets stream
         final OutputBitStream offsets = new OutputBitStream(basename + OFFSETS_EXTENSION);
 
-        long outdegreeBits, stateBits, modelBits, numArcs, numStates, maxStates, numEscapes, maxEscapes;
-        outdegreeBits = stateBits = modelBits = numArcs = numStates = maxStates = numEscapes = maxEscapes = 0;
+        long numArcs = 0;
+        // outdegree bits
+        long outdegreeBits = 0;
+        // state and models bits
+        long stateBits, modelBits, numStates, maxStates, totSymbols, maxSymbols;
+        stateBits = modelBits = numStates = maxStates = totSymbols = maxSymbols = 0;
+        //escapes
+        long numEscapes, maxEscapes, lostBits, avgEscapeBits, writtenEscapeBits, escapedEdges;
+        numEscapes = maxEscapes = lostBits = avgEscapeBits = writtenEscapeBits = escapedEdges = 0;
+
         offsets.writeLongDelta(0);
 
         int N = graph.numNodes();
-        int escapeBits = (int)(Math.log(N) / Math.log(2) + 1);
+        int escapeBits = (int) (Math.log(N) / Math.log(2) + 1);
 
-        long current = 0;
+        long current;
         long prev = 0;
+
         int modelNum = 0;
         int i;
         if (PROGRESS) i = 0;
 
-        long lostBits = 0;
-        long avgEscapeBits = 0;
-        long writtenEscapeBits = 0;
-
         // if clustering is selected, write all models to the stream
-        if (method == "cluster"){
+        if (method == "cluster") {
             for (int j = 0; j < model.K; j++)
                 modelBits += new AnsModel(model.centroid[j]).dump(modelStream);
         }
@@ -148,29 +151,28 @@ public class AnsGraph extends ImmutableGraph {
                 }
                 AnsEncoder e = new AnsEncoder(m);
                 e.encodeAll(succ, outdegree);
-                // compute lost bits writing escapes
-                int minBits = 0;
-                for (int k : e.escapedSymbolList) {
-                    minBits = max(minBits, (int) (Math.log(k) / Math.log(2) + 1));
-                }
-                for (int k: e.escapedSymbolList){
-                    lostBits += (minBits - Math.max(0, ((int) (Math.log(k) / Math.log(2) + 1))));
-                }
-                avgEscapeBits += minBits;
-                writtenEscapeBits += minBits * e.escapedSymbolList.size();
 
+//                // compute lost bits writing escapes
+//                int minBits = 0;
+//                for (int k : e.escapedSymbolList)
+//                    minBits = max(minBits, (int) (Math.log(k) / Math.log(2) + 1));
+//
+//                avgEscapeBits += minBits;
+                escapedEdges += e.escapedSymbolList.size();
 
                 // model id, state count, statelist to .graph file
-                if (method =="optimal") {
-                    stateBits += e.dump(graphStream, modelNum, escapeBits);
+                if (method == "optimal") {
+                    stateBits += e.dump(graphStream, modelNum);
                     modelBits += m.dump(modelStream);
-                } else if(method =="cluster") {
-                    stateBits += e.dump(graphStream, model.getClusterIndex(modelNum), escapeBits);
+                } else if (method == "cluster") {
+                    stateBits += e.dump(graphStream, model.getClusterIndex(modelNum));
                 }
                 modelNum++;
                 // write model to .model file
                 numStates += e.stateList.size();
                 maxStates = max(maxStates, e.stateList.size());
+                maxSymbols = max(maxSymbols, m.N);
+                totSymbols += m.N;
                 numEscapes += e.escapedSymbolList.size();
                 maxEscapes = max(maxEscapes, e.escapedSymbolList.size());
             }
@@ -197,22 +199,19 @@ public class AnsGraph extends ImmutableGraph {
         properties.setProperty("arcs", String.valueOf(numArcs));
         properties.setProperty("byteorder", byteOrder.toString());
         properties.setProperty("escapebits", String.valueOf(escapeBits));
-        properties.setProperty("avgescapebits", format.format((double)avgEscapeBits / N));
+        properties.setProperty("avgescapebits", format.format((double) avgEscapeBits / N));
         properties.setProperty("bitsformodels", String.valueOf(modelBits));
         properties.setProperty("bitsforoutdegrees", String.valueOf(outdegreeBits));
         properties.setProperty("bitsforstates", String.valueOf(stateBits - writtenEscapeBits));
-        properties.setProperty("bitsforescapes", format.format(writtenEscapeBits));
-        properties.setProperty("lostbitsforescapes", String.valueOf(lostBits));
-        properties.setProperty("avglostbitsforescapes", format.format((double)lostBits / N));
         properties.setProperty("writtenbits", String.valueOf(writtenBits));
         properties.setProperty("bitsperlink", format.format((double) writtenBits / numArcs));
-//        properties.setProperty("bitsperlink", format.format((double) writtenBits / numArcs));
-//        properties.setProperty("avgbitsforstates", format.format((double) stateBits / N));
-//        properties.setProperty("avgbitsformodels", format.format((double) modelBits / modelNum));
-//        properties.setProperty("avgbitsforoutdegrees", format.format((double) outdegreeBits / N));
+        properties.setProperty("escapededges", String.valueOf(escapedEdges));
+        properties.setProperty("escapededgespercentage", format.format((double) escapedEdges / numArcs));
         // states and escapes
         properties.setProperty("avgnumberofstates", format.format((double) numStates / N));
         properties.setProperty("maxnumberofstates", format.format(maxStates));
+        properties.setProperty("avgnumberofsymbols", format.format((double) totSymbols / N));
+        properties.setProperty("maxnumberofsymbols", format.format(maxSymbols));
         properties.setProperty("avgnumberofescapes", format.format((double) numEscapes / N));
         properties.setProperty("maxnumberofescapes", format.format(maxEscapes));
 
@@ -248,7 +247,7 @@ public class AnsGraph extends ImmutableGraph {
         return ret;
     }
 
-    public static KmeansHistogram computeClusters(ImmutableGraph g, int k, int iterations){
+    public static KmeansHistogram computeClusters(ImmutableGraph g, int k, int iterations) {
 
         int n = 0;
         for (final NodeIterator nodeIterator = g.nodeIterator(); nodeIterator.hasNext(); ) {
@@ -261,7 +260,7 @@ public class AnsGraph extends ImmutableGraph {
         for (final NodeIterator nodeIterator = g.nodeIterator(); nodeIterator.hasNext(); ) {
             nodeIterator.nextInt();
             int outdegree = nodeIterator.outdegree();
-            if (outdegree > 0){
+            if (outdegree > 0) {
                 int[] succ = computeGaps(nodeIterator.successorArray(), outdegree);
                 data[pos++] = new DatapointHistogram(new SymbolStats(succ, outdegree, P_RANGE, ESCAPE_THRESHOLD_PERCENTAGE, ESCAPE_FREQUENCY));
             }

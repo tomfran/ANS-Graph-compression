@@ -13,7 +13,7 @@ public class AnsGraphErrorTest {
 
         ErdosRenyiGraph g = new ErdosRenyiGraph(n, e);
         String filename = "data/error/ans";
-        AnsGraph.store(g, filename);
+        AnsGraph.storeEscape(g, filename, 50, 25);
         String f2 = "data/error/ef";
         EFGraph.store(g, f2);
     }
@@ -79,11 +79,11 @@ public class AnsGraphErrorTest {
     }
 
     public static void main(String[] args) throws IOException {
-        final boolean GEN = false;
+        final boolean GEN = true;
 
         boolean check = true;
         int from, to, p, pergen;
-        from = 10;
+        from = 20;
         p = 1;
         to = 30;
         pergen = 100;
@@ -92,7 +92,7 @@ public class AnsGraphErrorTest {
                 System.out.println("GEN:" + n);
                 for (int i = 0; i < pergen && check; i++) {
 //                    System.out.println("\n\n#######\n\n");
-                    genGraph(n, 0.8);
+                    genGraph(n, 0.1);
                     if (!check()) {
                         System.out.println("###### ERROR FOUND");
                         System.exit(1);
@@ -101,7 +101,7 @@ public class AnsGraphErrorTest {
                 }
 
             }
-        inspect();
+//        inspect();
 //        storeTest();
     }
 

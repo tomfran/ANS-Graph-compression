@@ -66,17 +66,18 @@ public class SymbolStats {
 
         int[] keysBeforeCutting = getKeysArray(freqMap);
 
+        int escapedTotal = 0;
         for (int k : keysBeforeCutting){
             v = freqMap.get(k);
             if (v < freqThreshold){
                 escaping = true;
                 freqMap.remove(k);
-                totalTmp -= v;
+                escapedTotal += v;
             }
         }
 
         if (escaping)
-            freqMap.put(ESCAPE_SYMBOL, (int) ((double) totalTmp / 100 * escapeFrequencyPercentage));
+            freqMap.put(ESCAPE_SYMBOL, escapedTotal);
 
         // sort elements by value
         int n = freqMap.size();

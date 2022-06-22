@@ -14,7 +14,7 @@ public class AnsModel {
     /** Sum of frequencies, usually a power of two. */
     protected int M;
     /** Number of symbols. */
-    protected int N;
+    public int N;
     /** Symbols to index mapping. */
     protected Int2IntOpenHashMap symbolsMapping;
     /** Index to symbols mapping. */

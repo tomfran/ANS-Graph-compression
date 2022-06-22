@@ -79,16 +79,29 @@ public class AnsSuccessorsReader implements LazyIntIterator {
             sl.add(i, graphLongWordBitReader.readState(63));
             if (DEBUG) System.out.println("\t- " + sl.getLong(i));
         }
-
-        int k = (int) graphLongWordBitReader.readGamma();
-        int escapedLen = (int) graphLongWordBitReader.readGamma();
-        IntArrayList es = new IntArrayList(escapedLen);
-        for (int i = 0; i < escapedLen; i++) {
-            es.add(i, (int) graphLongWordBitReader.readState(k));
+        // fill escapes
+        int escapeLen = (int) graphLongWordBitReader.readGamma();
+        if (escapeLen == 0){
+            decoder = new AnsDecoder(model, sl, numStates, new IntArrayList(), model.escapeIndex);
+        } else {
+            int limitBit = (int) graphLongWordBitReader.readGamma();
+            int overflowBits = (int) graphLongWordBitReader.readGamma();
+            int[] escapes = new int[escapeLen];
+            IntArrayList toFill = new IntArrayList();
+            for (int i = 0; i < escapeLen; i++) {
+                if ((int) graphLongWordBitReader.readState(1) == 1) {
+                    toFill.add(i);
+                }
+                escapes[i] = (int) graphLongWordBitReader.readState(limitBit);
+            }
+            // fill overflow
+            int over;
+            for (int i = 0; i < toFill.size(); i++) {
+                over = (int) graphLongWordBitReader.readState(overflowBits);
+                escapes[toFill.getInt(i)] |= (over << limitBit);
+            }
+            decoder = new AnsDecoder(model, sl, numStates, new IntArrayList(escapes), model.escapeIndex);
         }
-
-
-        decoder = new AnsDecoder(model, sl, numStates, es, model.escapeIndex);
     }
 
     @Override
