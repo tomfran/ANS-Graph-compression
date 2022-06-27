@@ -59,16 +59,17 @@ public class AnsGraphTest {
 //            ImmutableGraph g = BVGraph.load("data/it-wiki/bv/itwiki-2013");
 //            ImmutableGraph g = BVGraph.load("data/it-wiki/bv/itwiki-2013");
             ImmutableGraph g = BVGraph.load(bvPath);
-            EFGraph.store(g, efPath);
+//            EFGraph.store(g, efPath);
 
 //            ImmutableGraph g = BVGraph.load("data/uk100/bv/uk100");
 //            System.out.println(g.numNodes());
-//            for (int i = 10; i <= 30; i += 5) {
-////                System.out.println("i: " + i);
-//                ansPath = "data/" + graphDir + "/escaped_opt_for_symchange/" + String.format("%03d", i) + "_" + graphName;
-//                AnsGraph.storeEscape(g, ansPath, i, i);
-////                System.out.println(integrityCheck(g, AnsGraph.load(ansPath)));
-//            }
+            for (int i = 5; i <= 30; i += 5) {
+//                System.out.println("i: " + i);
+                ansPath = "data/" + graphDir + "/escaped_opt_for_symchange_mathmax/" + String.format("%03d", i) + "_" + graphName;
+//                ansPath = "data/" + graphDir + "/escape_apax/" + graphName;
+                AnsGraph.storeEscape(g, ansPath, i, i);
+                System.out.println(integrityCheck(g, AnsGraph.load(ansPath)));
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

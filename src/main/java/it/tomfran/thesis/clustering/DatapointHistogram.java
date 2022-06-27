@@ -14,78 +14,60 @@ public class DatapointHistogram {
     public Int2IntOpenHashMap symbolsMapping;
     public Int2IntOpenHashMap invSymbolsMapping;
     public int[] frequencies;
-    public int precision;
+    public int total;
     public int[] cumulative;
+    public int precision;
     public EliasFanoIndexedMonotoneLongBigList sym;
 
 
     public DatapointHistogram(SymbolStats s) {
         this.symbolsMapping = s.symbolsMapping;
-        this.frequencies = s.frequencies;
-        this.precision = s.precision;
+        this.frequencies = s.rawFrequencies;
+        this.total = s.total;
     }
 
-    public DatapointHistogram(Int2IntOpenHashMap symbolsMapping, int[] frequencies, int precision) {
+    public DatapointHistogram(Int2IntOpenHashMap symbolsMapping, int[] frequencies, int total) {
         this.symbolsMapping = symbolsMapping;
         this.frequencies = frequencies;
-        this.precision = precision;
+        this.total = total;
     }
 
     static DatapointHistogram buildCentroidFromCluster(DatapointHistogram[] points, int precision) {
         if (PROGRESS)
             System.out.println("Build from centroid, received " + points.length + " points.");
 
-        // get all the symbols in the points
-        IntSet mergedKeys = new IntOpenHashSet();
+        // for each point, update the frequency of it's symbols,
+        // or add a new one if required
 
-        for (DatapointHistogram p : points) {
-//            if (p == null) {
-//                System.out.println("NULL SYMBOLS MAPPING FOUND ");
-//                continue;
-//            }
-            mergedKeys.addAll(p.symbolsMapping.keySet());
+        Int2IntOpenHashMap symbolsFrequencies = new Int2IntOpenHashMap();
+        int total = 0;
+        int freq;
+        for (DatapointHistogram p : points){
+            for (int sym : p.symbolsMapping.keySet()){
+                freq = p.getSymFrequency(sym);
+                symbolsFrequencies.put(sym, symbolsFrequencies.getOrDefault(sym, 0) + freq);
+                total += freq;
+            }
         }
-        // build the centroid probability distribution
-        // as the average of all the distributions
+        int[] frequencies = new int[symbolsFrequencies.size()];
+        int pos = 0;
         Int2IntOpenHashMap symbolsMapping = new Int2IntOpenHashMap();
-
-        int pos = 0, n = points.length, k = mergedKeys.size();
-        double[] prob = new double[k];
-        for (int e : mergedKeys) {
-            for (int i = 0; i < points.length; i++)
-                prob[pos] += points[i].getSymProbability(e);
-
-            prob[pos] /= n;
-            symbolsMapping.put(e, pos);
+        for (Int2IntMap.Entry e : symbolsFrequencies.int2IntEntrySet()){
+            frequencies[pos] = e.getIntValue();
+            symbolsMapping.put(e.getIntKey(), pos);
             pos++;
         }
-        if (DEBUG) {
-            System.out.println("New probability: ");
-            for (double p : prob)
-                System.out.print(p + " ");
-        }
-        // build frequency, scaling probability to precision
-        // need to compute a new precision as the total might change for the Math.max
-        int[] frequencies = new int[k];
-        int newPrecision = 0;
-        for (int i = 0; i < k; i++) {
-            frequencies[i] = Math.max(1, (int) (prob[i] * precision));
-            newPrecision += frequencies[i];
-        }
-        if (DEBUG) {
-            System.out.println("\nNew frequencies: ");
-            for (int p : frequencies)
-                System.out.print(p + " ");
-            System.out.println();
-        }
-        // return the new computed centroid
-        return new DatapointHistogram(symbolsMapping, frequencies, newPrecision);
+
+        return new DatapointHistogram(symbolsMapping, frequencies, total);
+    }
+
+    private int getSymFrequency(int sym) {
+        int pos = symbolsMapping.getOrDefault(sym, -1);
+        return (pos == -1) ? 1 : frequencies[pos];
     }
 
     private double getSymProbability(int sym) {
-        int pos = symbolsMapping.getOrDefault(sym, -1);
-        int f = (pos == -1) ? DEFAULT_FREQ : frequencies[pos];
-        return (double) f / precision;
+        return (double) getSymFrequency(sym) / total;
     }
 
     public double KLDivergence(DatapointHistogram h) {
@@ -134,17 +116,6 @@ public class DatapointHistogram {
     }
 
     public DatapointHistogram copy() {
-        return new DatapointHistogram(symbolsMapping.clone(), frequencies.clone(), precision);
-    }
-
-    @Override
-    public String toString() {
-        String s = "Datapoint, "+frequencies.length + " symbols.\nFrequencies: ";
-        for (int e : frequencies)
-            s += e + " ";
-//        s += "\nSymlist: \n";
-//        for (int e : symbolsMapping.keySet())
-//            s += "\t sym: " + String.format("%6d", e) + " prob: " + String.format("%1.3f", getSymProbability(e)) + " index: " + symbolsMapping.get(e) +  "\n";
-        return s + "\n";
+        return new DatapointHistogram(symbolsMapping.clone(), frequencies.clone(), total);
     }
 }

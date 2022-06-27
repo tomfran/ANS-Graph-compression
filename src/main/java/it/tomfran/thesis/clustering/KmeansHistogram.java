@@ -69,16 +69,9 @@ public class KmeansHistogram {
         // for each iteration
         int i;
         for (i = 0; i < iterations && !stop; i++) {
-
-            if (PROGRESS)
-                System.out.println("- iteration " + (i + 1));
-
             stop = true;
             // for each point, compute the closest centroid
             for (int j = 0; j < n; j++) {
-                if (PROGRESS)
-                    if (j % 10000 == 0 && j > 0)
-                        System.out.println("datapoint number: " + j);
                 // current distance from the centroid
                 minDistance = data[j].distance(centroid[pointMapping[j]]);
                 // find the closest centroid and update distance
@@ -112,26 +105,19 @@ public class KmeansHistogram {
 
 
     public void lazyFit(boolean sorting) {
-        if (PROGRESS)
-            System.out.println("Lazy clustering");
+
         int interval = n/(K-1);
 
         int index;
         for (int i = 0; i < n; i++) {
             index = i / interval;
-
             pointMapping[i] = index;
             clusterCardinality[index] ++;
         }
 
-        if (PROGRESS)
-            System.out.println("Lazy clustering completed\nUpdating centroids");
-
         updateCentroids();
 
         if (sorting) {
-            if (PROGRESS)
-                System.out.println("Sorting frequencies");
             buildCentroidAnsStructures();
         }
     }

@@ -18,8 +18,10 @@ public class SymbolStats {
     protected Int2IntOpenHashMap invSymbolsMapping;
     /** Ordered symbol frequencies. */
     public int[] frequencies;
+    /** Ordered symbol frequencies. */
+    public int[] rawFrequencies;
     /** Sum of frequencies. */
-    protected int total;
+    public int total;
     /** Power of two to approximate frequencies. */
     public int precision;
     /** Escape threshold. */
@@ -59,17 +61,16 @@ public class SymbolStats {
             totalTmp++;
         }
 
-        // cycle through the keys and remove the ones with fewer than a given frequency
-        // if one is found, add the escape symbol
-        int freqThreshold = (int) ((double) totalTmp / 100 * escapeThresholdPercentage);
-        int v;
 
+        // cycle through symbols and escape the apax
+//        int freqThreshold = (int) ((double) totalTmp / 100 * escapeThresholdPercentage);
+        int freqThreshold = 0;
+//        freqThreshold = Math.max(freqThreshold, 1);
+        int v, escapedTotal = 0;
         int[] keysBeforeCutting = getKeysArray(freqMap);
-
-        int escapedTotal = 0;
         for (int k : keysBeforeCutting){
             v = freqMap.get(k);
-            if (v < freqThreshold){
+            if (v <= freqThreshold){
                 escaping = true;
                 freqMap.remove(k);
                 escapedTotal += v;
@@ -99,6 +100,7 @@ public class SymbolStats {
             normFreq = (int) ((double) freqMap.get(k) / totalTmp * precision);
             // make sure that there are no zero frequencies
             frequencies[i] = Integer.max(1, normFreq);
+            rawFrequencies[i] = freqMap.get(k);
             total += frequencies[i];
         }
 

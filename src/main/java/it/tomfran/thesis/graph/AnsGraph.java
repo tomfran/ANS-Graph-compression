@@ -63,7 +63,7 @@ public class AnsGraph extends ImmutableGraph {
         this.escapeBits = escapeBits;
     }
 
-    public static void store(ImmutableGraph graph, CharSequence basename, int clusters, int iterations) throws IOException {
+    public static void storeCluster(ImmutableGraph graph, CharSequence basename, int clusters, int iterations) throws IOException {
         // build the kmeans data points for this graph
 
         // run Kmeans with the given number of clusters
@@ -120,10 +120,9 @@ public class AnsGraph extends ImmutableGraph {
         if (PROGRESS) i = 0;
 
         // if clustering is selected, write all models to the stream
-        if (method == "cluster") {
+        if (method == "cluster")
             for (int j = 0; j < model.K; j++)
                 modelBits += new AnsModel(model.centroid[j]).dump(modelStream);
-        }
 
         for (final NodeIterator nodeIterator = graph.nodeIterator(); nodeIterator.hasNext(); ) {
             if (PROGRESS) {
@@ -146,7 +145,9 @@ public class AnsGraph extends ImmutableGraph {
                     SymbolStats symStats = new SymbolStats(succ, outdegree, P_RANGE, escapePercentage, escapeFrequency);
                     m = new AnsModel(symStats);
                 } else if (method == "cluster") {
+                    // model num in a counter for nodes, as in optimal you have a model for each node with oudeg > 0
                     int clusterPos = model.getClusterIndex(modelNum);
+                    // build the centroid model
                     m = new AnsModel(model.centroid[clusterPos]);
                 }
                 AnsEncoder e = new AnsEncoder(m);
@@ -270,8 +271,8 @@ public class AnsGraph extends ImmutableGraph {
         clusteringModel.fit();
 //        clusteringModel.lazyFit();
 //
-//        for (DatapointHistogram c : clusteringModel.centroid)
-//            System.out.println(c);
+        for (DatapointHistogram c : clusteringModel.centroid)
+            System.out.println(c);
 
         return clusteringModel;
     }
