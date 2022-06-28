@@ -90,6 +90,7 @@ public class SymbolStats {
         invSymbolsMapping = new Int2IntOpenHashMap();
         // build frequency arrays
         frequencies = new int[n];
+        rawFrequencies = new int[n];
         total = 0;
         int normFreq;
         int k;
@@ -108,7 +109,7 @@ public class SymbolStats {
             escapeIndex = symbolsMapping.get(ESCAPE_SYMBOL);
     }
 
-    private int[] getKeysArray( Int2IntOpenHashMap m ) {
+    public static int[] getKeysArray(Int2IntOpenHashMap m) {
         int n = m.size();
         // sort elements by value
         int[] keys = new int[n];

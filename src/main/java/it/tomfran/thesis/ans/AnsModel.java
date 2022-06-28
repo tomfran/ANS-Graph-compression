@@ -48,12 +48,13 @@ public class AnsModel {
 
     public AnsModel(DatapointHistogram centroid) {
         // this fields are common
-        this.symbolsMapping = centroid.symbolsMapping;
-        this.frequencies = centroid.frequencies;
-        this.invSymbolsMapping = centroid.invSymbolsMapping;
-        this.cumulative = centroid.cumulative;
-        this.sym = centroid.sym;
-        M = centroid.precision;
+        symbolsMapping = centroid.symbolsMapping;
+        frequencies = centroid.frequencies;
+        invSymbolsMapping = centroid.invSymbolsMapping;
+        cumulative = centroid.cumulative;
+        sym = centroid.sym;
+        escapeIndex = centroid.escapeIndex;
+        M = centroid.total;
         N = this.frequencies.length;
     }
 

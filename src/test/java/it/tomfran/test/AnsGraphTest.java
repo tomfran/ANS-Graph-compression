@@ -56,25 +56,28 @@ public class AnsGraphTest {
             String bvPath = "data/" + graphDir + "/bv/" + graphName;
             String efPath = "data/" + graphDir + "/ef/" + graphName;
             String ansPath;
-//            ImmutableGraph g = BVGraph.load("data/it-wiki/bv/itwiki-2013");
-//            ImmutableGraph g = BVGraph.load("data/it-wiki/bv/itwiki-2013");
             ImmutableGraph g = BVGraph.load(bvPath);
 //            EFGraph.store(g, efPath);
+            int k = g.numNodes()/100000;
+            k = 1;
+            int iter = 0;
+            ansPath = "data/" + graphDir + "/clustered/K_" + k + "_iter_" + iter + "_" + graphName;
+            AnsGraph.storeCluster(g, ansPath, k, iter);
+            System.out.println(integrityCheck(g, AnsGraph.load(ansPath)));
 
-//            ImmutableGraph g = BVGraph.load("data/uk100/bv/uk100");
-//            System.out.println(g.numNodes());
-            for (int i = 5; i <= 30; i += 5) {
+//            for (int i = 5; i <= 30; i += 5) {
 //                System.out.println("i: " + i);
-                ansPath = "data/" + graphDir + "/escaped_opt_for_symchange_mathmax/" + String.format("%03d", i) + "_" + graphName;
+//                ansPath = "data/" + graphDir + "/escaped_opt_for_symchange_mathmax/" + String.format("%03d", i) + "_" + graphName;
 //                ansPath = "data/" + graphDir + "/escape_apax/" + graphName;
-                AnsGraph.storeEscape(g, ansPath, i, i);
-                System.out.println(integrityCheck(g, AnsGraph.load(ansPath)));
-            }
+//                AnsGraph.storeEscape(g, ansPath, i, i);
+//                System.out.println(integrityCheck(g, AnsGraph.load(ansPath)));
+//            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
     }
+
 
     @Test
     public void randomGraphIntegrityCheck() throws IOException {

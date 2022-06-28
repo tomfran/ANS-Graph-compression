@@ -39,7 +39,7 @@ public class AnsGraph extends ImmutableGraph {
     public static final int P_RANGE = 10;
     public static final int ESCAPE_THRESHOLD_PERCENTAGE = 25;
     public static final int ESCAPE_FREQUENCY = 25;
-    private static final boolean PROGRESS = false;
+    private static final boolean PROGRESS = true;
 
     public int escapeBits;
     /** Elias fano sequence for the offsets. */
@@ -68,6 +68,8 @@ public class AnsGraph extends ImmutableGraph {
 
         // run Kmeans with the given number of clusters
         KmeansHistogram model = computeClusters(graph, clusters, iterations);
+        System.out.println("Clustering completed");
+//        System.exit(0);
         // store internal with the clustering model
         storeInternal(graph, basename, "cluster", model, 0, 0);
     }
@@ -120,9 +122,12 @@ public class AnsGraph extends ImmutableGraph {
         if (PROGRESS) i = 0;
 
         // if clustering is selected, write all models to the stream
-        if (method == "cluster")
+        if (method == "cluster") {
+            if (PROGRESS)
+                System.out.println("Writing cluster models on disk");
             for (int j = 0; j < model.K; j++)
                 modelBits += new AnsModel(model.centroid[j]).dump(modelStream);
+        }
 
         for (final NodeIterator nodeIterator = graph.nodeIterator(); nodeIterator.hasNext(); ) {
             if (PROGRESS) {
@@ -215,7 +220,7 @@ public class AnsGraph extends ImmutableGraph {
         properties.setProperty("maxnumberofsymbols", format.format(maxSymbols));
         properties.setProperty("avgnumberofescapes", format.format((double) numEscapes / N));
         properties.setProperty("maxnumberofescapes", format.format(maxEscapes));
-
+        // number of models and method used
         properties.setProperty("numberofmodels", format.format(modelNum));
         properties.setProperty("method", method.toString());
         properties.setProperty(ImmutableGraph.GRAPHCLASS_PROPERTY_KEY, AnsGraph.class.getName());
@@ -256,6 +261,7 @@ public class AnsGraph extends ImmutableGraph {
             if (nodeIterator.outdegree() > 0) n++;
         }
         DatapointHistogram[] data = new DatapointHistogram[n];
+        System.out.println("First pass done");
 
         int pos = 0;
         for (final NodeIterator nodeIterator = g.nodeIterator(); nodeIterator.hasNext(); ) {
@@ -266,13 +272,10 @@ public class AnsGraph extends ImmutableGraph {
                 data[pos++] = new DatapointHistogram(new SymbolStats(succ, outdegree, P_RANGE, ESCAPE_THRESHOLD_PERCENTAGE, ESCAPE_FREQUENCY));
             }
         }
-
+        System.out.println("Second pass done");
         KmeansHistogram clusteringModel = new KmeansHistogram(k, iterations, data);
+        System.out.println("Initialized model");
         clusteringModel.fit();
-//        clusteringModel.lazyFit();
-//
-        for (DatapointHistogram c : clusteringModel.centroid)
-            System.out.println(c);
 
         return clusteringModel;
     }
@@ -315,14 +318,8 @@ public class AnsGraph extends ImmutableGraph {
         int l = 0;
         LongWordBitReader modelLongWordReader = new LongWordBitReader(modelsLongList, l);
 
-        String method = properties.getProperty("method");
-//        System.out.println("method: " + method);
-        // each model is rebuilt reading the necessary info from the file
         for (int i = 0; i < numModels; i++) {
-//            if (method.equals("optimal"))
             ansModels[i] = AnsModel.rebuildModel(modelLongWordReader);
-//            else if (method.equals("orderStatistic"))
-//                ansModels[i] = AnsModelOrderStatistic.rebuildModel(modelLongWordReader);
         }
         LongBigList graph = loadLongBigList(basename + GRAPH_EXTENSION, byteOrder);
 
