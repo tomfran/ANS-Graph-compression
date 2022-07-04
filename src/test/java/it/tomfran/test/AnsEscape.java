@@ -23,7 +23,7 @@ public class AnsEscape {
         int[] numList = AnsTest.getRandom(100);
         for (int i = 0; i <= 5; i++) {
             System.out.println("\nCutting: " + 5*i + " percentage");
-            new SymbolStats(numList, numList.length, 10, 5*i, 5*i).debugPrint();
+            new SymbolStats(numList, numList.length, 10, 5*i).debugPrint();
         }
     }
 
@@ -32,7 +32,7 @@ public class AnsEscape {
         int[] numList = AnsTest.getRandom(1000);
 //        for (int e : numList) System.out.print(e + ", "); System.out.println();
         for (int i = 1; i < 19; i++) {
-            SymbolStats s = new SymbolStats(numList, numList.length, 10, 2, 5*i);
+            SymbolStats s = new SymbolStats(numList, numList.length, 10, 2);
             System.out.println("ENCODING: escape frequency: " + 5*i + " percent");
             AnsEncoder e = new AnsEncoder(new AnsModel(s));
             e.encodeAll(numList, numList.length);
@@ -50,7 +50,7 @@ public class AnsEscape {
         final LongWordOutputBitStream modelStream = new LongWordOutputBitStream(modelChannel, ByteOrder.nativeOrder());
 
         int[] numList = AnsTest.getRandom(1000);
-        SymbolStats s = new SymbolStats(numList, numList.length, 10, 0, 10);
+        SymbolStats s = new SymbolStats(numList, numList.length, 10, 0);
 //        s.debugPrint();
         AnsModel m = new AnsModel(s);
         m.debugPrint();

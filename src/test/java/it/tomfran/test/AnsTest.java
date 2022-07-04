@@ -92,7 +92,7 @@ public class AnsTest {
         System.out.println("Optimal model test");
         double avgBits = 0;
         for (int i = 0; i < runPerModel; i++) {
-            SymbolStats s = new SymbolStats(numList, len, 10, 2, 2);
+            SymbolStats s = new SymbolStats(numList, len, 10, 2);
             AnsModel m = new AnsModel(s);
             AnsEncoder ans = buildEncoder(m, numList, len);
             AnsDecoder dec = buildDecoder(ans.stateList, ans.normCount, ans.escapedSymbolList, ans.escapedSymbolList.size(), m);

@@ -2,6 +2,7 @@ package it.tomfran.thesis.clustering;
 
 
 import it.tomfran.thesis.ans.SymbolStats;
+import it.unimi.dsi.bits.Fast;
 import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.sux4j.util.EliasFanoIndexedMonotoneLongBigList;
 
@@ -81,29 +82,82 @@ public class DatapointHistogram {
         return ret;
     }
 
+    private double log2(double x){
+        return Math.log(x)/Math.log(2);
+    }
+
+    private int ansFreqLen(int x){
+        final int msb = Fast.mostSignificantBit(x);
+        return 2 * msb + 1;
+    }
+
     public void buildAnsStructures() {
 
-        // escape the apax for now
-        int freqThreshold = Math.max(1, (int)((double)total/100 * 0.01));
-//        int freqThreshold = 1;
-        int v, escapedTotal = 0;
-        boolean escaping = false;
-        int[] keysBeforeCutting = getKeysArray(rawFrequencyMap);
-        for (int k : keysBeforeCutting) {
-            v = rawFrequencyMap.get(k);
-            if (v <= freqThreshold) {
-                escaping = true;
-                rawFrequencyMap.remove(k);
-                escapedTotal += v;
+        // find what to escape
+        // sort keys by descending frequency
+        int n = rawFrequencyMap.size();
+        int[] keys = getKeysArray(rawFrequencyMap);
+        IntArrays.mergeSort(keys, (k1, k2) -> rawFrequencyMap.get(k2) - rawFrequencyMap.get(k1));
+
+        // compute cost of not escaping, so entropy of the encoding plus ans model bits
+        double fullEntropy = 0;
+        int cs, ls = 0;
+        int ansModelBits = 0;
+//        System.out.println("Original keys: ");
+        for (int k : keys) {
+            cs = rawFrequencyMap.get(k);
+            ls = Math.max(ls, (int)(log2(k) + 1));
+//            System.out.println("- " + k + " ps: " + (double) cs / total + " entr: " + cs * log2((double) cs / total));
+            fullEntropy -= cs * log2((double) cs / total);
+            ansModelBits += ansFreqLen(k);
+        }
+
+//        System.out.println("Full entropy: " + fullEntropy);
+
+        // find the threhsold that minimize the total written bits for this cluster
+//        System.out.println("maxlog: " + ls);
+        int escapeFreq = 0, escapeThreshold = n, escapeBits;
+        double minOverall, symsEntropy, escapeEntropy, currOverall;
+        symsEntropy = fullEntropy;
+        minOverall = fullEntropy + ansModelBits;
+//        System.out.println("Started computing threshold");
+        for (int i = n-1; i >= 0; i--) {
+            // get frequency and remove entropy
+            cs = rawFrequencyMap.get(keys[i]);
+            ansModelBits -= ansFreqLen(keys[i]);
+            symsEntropy += (cs * log2((double) cs / total));
+            // add sym to escape symbol
+            escapeFreq += cs;
+            escapeEntropy = -(escapeFreq * log2((double) escapeFreq / total));
+            escapeBits = escapeFreq * ls;
+            currOverall = symsEntropy + escapeEntropy + escapeBits + ansModelBits;
+//            System.out.println(" overall: " +  currOverall + "Syms ent: " + symsEntropy + " Esc ent: " + escapeEntropy + " Esc bits: " + escapeBits + "Ans model bits" + ansModelBits);
+            if (currOverall < minOverall){
+                escapeThreshold = i;
+                minOverall = currOverall;
             }
         }
+        System.out.println("Total sims: " + n + " escaped: " + (n-escapeThreshold));
+//        System.out.println("EscapeThreshold: " + escapeThreshold);
+
+        // iterate over the keys to remove the escaped ones
+        int escapedTotal = 0;
+        boolean escaping = false;
+        for (int i = 0; i < n; i++) {
+            if (i >= escapeThreshold){
+                escaping = true;
+                escapedTotal += rawFrequencyMap.get(keys[i]);
+                rawFrequencyMap.remove(keys[i]);
+            }
+        }
+
         // if escaping, add escape sym to freq map
         if (escaping)
             rawFrequencyMap.put(ESCAPE_SYMBOL, escapedTotal);
 
-        // sort keys by descending frequency
-        int n = rawFrequencyMap.size();
-        int[] keys = getKeysArray(rawFrequencyMap);
+        // sort keys once again to ge the new mapping, fill all the ans structures
+        n = rawFrequencyMap.size();
+        keys = getKeysArray(rawFrequencyMap);
         IntArrays.mergeSort(keys, (k1, k2) -> rawFrequencyMap.get(k2) - rawFrequencyMap.get(k1));
 
         symbolsMapping = new Int2IntOpenHashMap();
@@ -129,6 +183,12 @@ public class DatapointHistogram {
         cumulative[0] = 1;
         for (int i = 1; i < n; i++)
             cumulative[i] = cumulative[i - 1] + frequencies[i - 1];
+
+//        System.out.println("Symbols: ");
+//        for (int i = 0; i < n; i++) {
+//            System.out.println("Sym: " + invSymbolsMapping.get(i) + "freq " + frequencies[i]);
+//        }
+//        System.out.println("\n\n");
 
         sym = new EliasFanoIndexedMonotoneLongBigList(new IntArrayList(cumulative));
     }

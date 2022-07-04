@@ -26,8 +26,6 @@ public class SymbolStats {
     public int precision;
     /** Escape threshold. */
     public int escapeThresholdPercentage;
-    /** Frequency of escape symbol. */
-    public int escapeFrequencyPercentage;
 
     public boolean escaping;
 
@@ -40,11 +38,10 @@ public class SymbolStats {
      * @param length   length of the array.
      * @param d        power of two to approximate probabilities.
      */
-    public SymbolStats(int[] iterator, int length, int d, int escapeThresholdPercentage, int escapeFrequencyPercentage) {
+    public SymbolStats(int[] iterator, int length, int d, int escapeThresholdPercentage) {
         this.iterator = iterator;
         this.length = length;
         this.escapeThresholdPercentage = escapeThresholdPercentage;
-        this.escapeFrequencyPercentage = escapeFrequencyPercentage;
         precision = 1 << d;
         escaping = false;
         escapeIndex = -1;
@@ -63,8 +60,8 @@ public class SymbolStats {
 
 
         // cycle through symbols and escape the apax
-//        int freqThreshold = (int) ((double) totalTmp / 100 * escapeThresholdPercentage);
-        int freqThreshold = 0;
+        int freqThreshold = (int) ((double) totalTmp / 100 * escapeThresholdPercentage);
+//        int freqThreshold = 0;
 //        freqThreshold = Math.max(freqThreshold, 1);
         int v, escapedTotal = 0;
         int[] keysBeforeCutting = getKeysArray(freqMap);

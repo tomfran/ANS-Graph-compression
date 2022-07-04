@@ -43,7 +43,7 @@ public class KmeansHistogram {
             centroid[i].buildAnsStructures();
             total += centroid[i].symbolsMapping.size();
         }
-        System.out.println("Average number of symbols after excaping apax: " + (double)total/K);
+        System.out.println("Average number of symbols after excaping: " + (double)total/K);
     }
 
     private DatapointHistogram[] getClusterPoints(int i) {
@@ -81,15 +81,14 @@ public class KmeansHistogram {
             stop = true;
             // for each point, compute the closest centroid
             for (int j = 0; j < n; j++) {
-                if (PROGRESS && ((j % 10000) == 0))
-                    System.out.println("Point: " + j + "/" + n);
+//                if (PROGRESS && ((j % 10000) == 0))
+//                    System.out.println("Point: " + j + "/" + n);
                 // current distance from the centroid
                 minDistance = data[j].distance(centroid[pointMapping[j]]);
                 // find the closest centroid and update distance
                 for (int k = 0; k < K; k++) {
-                    if (k == pointMapping[j]) continue;
-                    currDistance = data[j].distance(centroid[k]);
-                    if (currDistance < minDistance) {
+                    if ((k != pointMapping[j]) &&
+                            (currDistance = data[j].distance(centroid[k])) < minDistance) {
                         stop = false;
                         minDistance = currDistance;
                         // update cluster cardinality and mappings

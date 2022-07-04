@@ -13,7 +13,7 @@ public class AnsGraphErrorTest {
 
         ErdosRenyiGraph g = new ErdosRenyiGraph(n, e);
         String filename = "data/error/ans";
-        AnsGraph.storeEscape(g, filename, 50, 25);
+        AnsGraph.storeEscape(g, filename, 50);
         String f2 = "data/error/ef";
         EFGraph.store(g, f2);
     }

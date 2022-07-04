@@ -57,13 +57,24 @@ public class AnsGraphTest {
             String efPath = "data/" + graphDir + "/ef/" + graphName;
             String ansPath;
             ImmutableGraph g = BVGraph.load(bvPath);
-//            EFGraph.store(g, efPath);
-            int k = g.numNodes()/100000;
-            k = 1;
-            int iter = 0;
-            ansPath = "data/" + graphDir + "/clustered/K_" + k + "_iter_" + iter + "_" + graphName;
-            AnsGraph.storeCluster(g, ansPath, k, iter);
-            System.out.println(integrityCheck(g, AnsGraph.load(ansPath)));
+
+
+
+//            System.exit(0);
+
+            for (int i = 100000; i <= 100000; i*=10) {
+                int k = g.numNodes()/i;
+                k = 5;
+                int iter = 0;
+                int prior = 0;
+                System.out.println(iter + " "  + k);
+                ansPath = "data/" + graphDir + "/clustered_newescape/" + k + "_K_" + iter + "_iter_" + prior + "_prior_" + graphName;
+                AnsGraph.storeCluster(g, ansPath, k, iter, prior);
+                System.out.println(integrityCheck(g, AnsGraph.load(ansPath)));
+            }
+
+//            k = 1;
+//            System.out.println(integrityCheck(g, AnsGraph.load(ansPath)));
 
 //            for (int i = 5; i <= 30; i += 5) {
 //                System.out.println("i: " + i);

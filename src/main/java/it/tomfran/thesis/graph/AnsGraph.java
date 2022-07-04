@@ -37,8 +37,6 @@ public class AnsGraph extends ImmutableGraph {
     public static final String MODEL_EXTENSION = ".model";
     public static final String PROPERTIES_EXTENSION = ".properties";
     public static final int P_RANGE = 10;
-    public static final int ESCAPE_THRESHOLD_PERCENTAGE = 25;
-    public static final int ESCAPE_FREQUENCY = 25;
     private static final boolean PROGRESS = true;
 
     public int escapeBits;
@@ -63,26 +61,24 @@ public class AnsGraph extends ImmutableGraph {
         this.escapeBits = escapeBits;
     }
 
-    public static void storeCluster(ImmutableGraph graph, CharSequence basename, int clusters, int iterations) throws IOException {
+    public static void storeCluster(ImmutableGraph graph, CharSequence basename, int clusters, int iterations, int priorEscapePerc) throws IOException {
         // build the kmeans data points for this graph
 
         // run Kmeans with the given number of clusters
-        KmeansHistogram model = computeClusters(graph, clusters, iterations);
-        System.out.println("Clustering completed");
-//        System.exit(0);
+        KmeansHistogram model = computeClusters(graph, clusters, iterations, priorEscapePerc);
         // store internal with the clustering model
-        storeInternal(graph, basename, "cluster", model, 0, 0);
+        storeInternal(graph, basename, "cluster", model, -1);
     }
 
-    public static void storeEscape(ImmutableGraph graph, CharSequence basename, int escapePercentage, int escapeFrequency) throws IOException {
-        storeInternal(graph, basename, "optimal", null, escapePercentage, escapeFrequency);
+    public static void storeEscape(ImmutableGraph graph, CharSequence basename, int escapePercentage) throws IOException {
+        storeInternal(graph, basename, "optimal", null, escapePercentage);
     }
 
     public static void store(ImmutableGraph graph, CharSequence basename) throws IOException {
-        storeInternal(graph, basename, "optimal", null, 0, 0);
+        storeInternal(graph, basename, "optimal", null, 0);
     }
 
-    public static void storeInternal(ImmutableGraph graph, CharSequence basename, CharSequence method, KmeansHistogram model, int escapePercentage, int escapeFrequency) throws IOException {
+    public static void storeInternal(ImmutableGraph graph, CharSequence basename, CharSequence method, KmeansHistogram model, int escapePercentage) throws IOException {
 
         ByteOrder byteOrder = ByteOrder.nativeOrder();
 
@@ -147,7 +143,7 @@ public class AnsGraph extends ImmutableGraph {
                 // build model according to method
                 AnsModel m = null;
                 if (method == "optimal") {
-                    SymbolStats symStats = new SymbolStats(succ, outdegree, P_RANGE, escapePercentage, escapeFrequency);
+                    SymbolStats symStats = new SymbolStats(succ, outdegree, P_RANGE, escapePercentage);
                     m = new AnsModel(symStats);
                 } else if (method == "cluster") {
                     // model num in a counter for nodes, as in optimal you have a model for each node with oudeg > 0
@@ -253,7 +249,7 @@ public class AnsGraph extends ImmutableGraph {
         return ret;
     }
 
-    public static KmeansHistogram computeClusters(ImmutableGraph g, int k, int iterations) {
+    public static KmeansHistogram computeClusters(ImmutableGraph g, int k, int iterations, int escapePerc) {
 
         int n = 0;
         for (final NodeIterator nodeIterator = g.nodeIterator(); nodeIterator.hasNext(); ) {
@@ -261,7 +257,6 @@ public class AnsGraph extends ImmutableGraph {
             if (nodeIterator.outdegree() > 0) n++;
         }
         DatapointHistogram[] data = new DatapointHistogram[n];
-        System.out.println("First pass done");
 
         int pos = 0;
         for (final NodeIterator nodeIterator = g.nodeIterator(); nodeIterator.hasNext(); ) {
@@ -269,12 +264,10 @@ public class AnsGraph extends ImmutableGraph {
             int outdegree = nodeIterator.outdegree();
             if (outdegree > 0) {
                 int[] succ = computeGaps(nodeIterator.successorArray(), outdegree);
-                data[pos++] = new DatapointHistogram(new SymbolStats(succ, outdegree, P_RANGE, ESCAPE_THRESHOLD_PERCENTAGE, ESCAPE_FREQUENCY));
+                data[pos++] = new DatapointHistogram(new SymbolStats(succ, outdegree, P_RANGE, escapePerc));
             }
         }
-        System.out.println("Second pass done");
         KmeansHistogram clusteringModel = new KmeansHistogram(k, iterations, data);
-        System.out.println("Initialized model");
         clusteringModel.fit();
 
         return clusteringModel;
