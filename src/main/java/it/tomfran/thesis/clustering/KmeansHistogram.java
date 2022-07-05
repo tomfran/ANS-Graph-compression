@@ -98,11 +98,6 @@ public class KmeansHistogram {
                     }
                 }
             }
-            if (PROGRESS) {
-                System.out.println("\tCentroid assignments: ");
-                for (int j = 0; j < K; j++)
-                    System.out.println("\t- centroid " + j + ": " + clusterCardinality[j]);
-            }
             // rebuild centroids according to new clusters
             updateCentroids();
         }

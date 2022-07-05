@@ -1,6 +1,8 @@
 plugins {
     id 'java'
+    id 'application'
 }
+
 
 group 'org.example'
 version '1.0-SNAPSHOT'
@@ -24,7 +26,15 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
 
+mainClassName = 'it.tomfran.thesis.graph.AnsGraphMain'
+
+jar {
+    manifest {
+        attributes 'Main-Class':  'it.tomfran.thesis.graph.AnsGraphMain'
+    }
+}
+
 test {
     useJUnitPlatform()
-    maxHeapSize '2g'
+    maxHeapSize '10g'
 }

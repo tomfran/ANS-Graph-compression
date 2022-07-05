@@ -127,7 +127,7 @@ public class AnsGraph extends ImmutableGraph {
 
         for (final NodeIterator nodeIterator = graph.nodeIterator(); nodeIterator.hasNext(); ) {
             if (PROGRESS) {
-                if ((i % 10000) == 0) {
+                if ((i % 1000000) == 0) {
                     System.out.println("ANS graph compression: node -> " + i);
                 }
                 i++;

@@ -137,7 +137,7 @@ public class DatapointHistogram {
                 minOverall = currOverall;
             }
         }
-        System.out.println("Total sims: " + n + " escaped: " + (n-escapeThreshold));
+//        System.out.println("Total sims: " + n + " escaped: " + (n-escapeThreshold));
 //        System.out.println("EscapeThreshold: " + escapeThreshold);
 
         // iterate over the keys to remove the escaped ones
