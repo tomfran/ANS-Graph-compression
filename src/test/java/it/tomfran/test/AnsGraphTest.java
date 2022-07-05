@@ -51,24 +51,21 @@ public class AnsGraphTest {
     public static void main(String[] args) {
         try {
 
-            String graphDir = "uk2014";
-            String graphName = "uk-2014-tpd";
+            String graphDir = "it-wiki";
+            String graphName = "itwiki-2013";
             String bvPath = "data/" + graphDir + "/bv/" + graphName;
             String efPath = "data/" + graphDir + "/ef/" + graphName;
             String ansPath;
             ImmutableGraph g = BVGraph.load(bvPath);
+            ansPath = "data/" + graphDir + "/optimal_ans/" + graphName;
+            AnsGraph.store(g, ansPath);
 
-
-
-//            System.exit(0);
-
-            for (int i = 100000; i <= 100000; i*=10) {
+            for (int i = 100; i <= 100000; i*=10) {
                 int k = g.numNodes()/i;
-                k = 5;
                 int iter = 0;
                 int prior = 0;
                 System.out.println(iter + " "  + k);
-                ansPath = "data/" + graphDir + "/clustered_newescape/" + k + "_K_" + iter + "_iter_" + prior + "_prior_" + graphName;
+                ansPath = "data/" + graphDir + "/clustered/" + k + "_K_" + iter + "_iter_" + prior + "_prior_" + graphName;
                 AnsGraph.storeCluster(g, ansPath, k, iter, prior);
                 System.out.println(integrityCheck(g, AnsGraph.load(ansPath)));
             }
