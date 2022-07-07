@@ -95,54 +95,74 @@ public class DatapointHistogram {
 
         // find what to escape
         // sort keys by descending frequency
+        // if prior escape is selected, remove the escape sym, keeping its value
+        // to initialize later variables
+        int escapedTotal = rawFrequencyMap.getOrDefault(ESCAPE_SYMBOL, 0);
+        boolean escaping = (escapedTotal > 0);
+        rawFrequencyMap.remove(ESCAPE_SYMBOL);
+
+        if (DEBUG)
+            if (escaping) System.out.println("Prior escape found, escapeTotal: " + escapedTotal);
+
         int n = rawFrequencyMap.size();
         int[] keys = getKeysArray(rawFrequencyMap);
         IntArrays.mergeSort(keys, (k1, k2) -> rawFrequencyMap.get(k2) - rawFrequencyMap.get(k1));
 
         // compute cost of not escaping, so entropy of the encoding plus ans model bits
-        double fullEntropy = 0;
+        double initialEntropy = 0;
         int cs, ls = 0;
         int ansModelBits = 0;
-//        System.out.println("Original keys: ");
+        if (DEBUG)
+            System.out.println("Original keys: ");
         for (int k : keys) {
             cs = rawFrequencyMap.get(k);
             ls = Math.max(ls, (int)(log2(k) + 1));
-//            System.out.println("- " + k + " ps: " + (double) cs / total + " entr: " + cs * log2((double) cs / total));
-            fullEntropy -= cs * log2((double) cs / total);
+            if (DEBUG)
+                System.out.println("- " + k + " ps: " + (double) cs / total + " entr: " + cs * log2((double) cs / total));
+            initialEntropy -= cs * log2((double) cs / total);
             ansModelBits += ansFreqLen(k);
         }
-
-//        System.out.println("Full entropy: " + fullEntropy);
+        if (DEBUG)
+            System.out.println("Full entropy: " + initialEntropy);
 
         // find the threhsold that minimize the total written bits for this cluster
-//        System.out.println("maxlog: " + ls);
-        int escapeFreq = 0, escapeThreshold = n, escapeBits;
+        // if prior escape has been selected, set the escape entropy accordingly
+        if (DEBUG)
+            System.out.println("maxlog: " + ls);
+        // frequency of escape sym, cutting point in frequencies, bits spent
+        // to write escaped syms
+        int escapeFreq = escapedTotal, escapeThreshold = n, escapeBits;
+        // min overall value, entropy of syms encoding, entropy of escape encoding, current
         double minOverall, symsEntropy, escapeEntropy, currOverall;
-        symsEntropy = fullEntropy;
-        minOverall = fullEntropy + ansModelBits;
-//        System.out.println("Started computing threshold");
+        symsEntropy = initialEntropy;
+        escapeEntropy = (escaping)? -(escapeFreq * log2((double) escapeFreq / total)) : 0;
+        escapeBits = (escaping)? escapeFreq * ls : 0;
+        minOverall = initialEntropy + escapeEntropy + escapeBits + ansModelBits;
+        if (DEBUG)
+            System.out.println("Started computing threshold, minoverall: " + minOverall);
         for (int i = n-1; i >= 0; i--) {
-            // get frequency and remove entropy
+            // get frequency and remove its entropy
             cs = rawFrequencyMap.get(keys[i]);
             ansModelBits -= ansFreqLen(keys[i]);
             symsEntropy += (cs * log2((double) cs / total));
-            // add sym to escape symbol
+            // add sym to escape symbol, updaing escape entropy
             escapeFreq += cs;
             escapeEntropy = -(escapeFreq * log2((double) escapeFreq / total));
+            // TODO this is technically wrong, as ls might be higher due to prior escaping
             escapeBits = escapeFreq * ls;
             currOverall = symsEntropy + escapeEntropy + escapeBits + ansModelBits;
-//            System.out.println(" overall: " +  currOverall + "Syms ent: " + symsEntropy + " Esc ent: " + escapeEntropy + " Esc bits: " + escapeBits + "Ans model bits" + ansModelBits);
+            if (DEBUG)
+                System.out.println(" overall: " +  currOverall + "Syms ent: " + symsEntropy + " Esc ent: " + escapeEntropy + " Esc bits: " + escapeBits + "Ans model bits" + ansModelBits);
             if (currOverall < minOverall){
                 escapeThreshold = i;
                 minOverall = currOverall;
             }
         }
-//        System.out.println("Total sims: " + n + " escaped: " + (n-escapeThreshold));
-//        System.out.println("EscapeThreshold: " + escapeThreshold);
-
+        if (DEBUG) {
+            System.out.println("Total sims: " + n + " escaped: " + (n - escapeThreshold));
+            System.out.println("EscapeThreshold: " + escapeThreshold);
+        }
         // iterate over the keys to remove the escaped ones
-        int escapedTotal = 0;
-        boolean escaping = false;
         for (int i = 0; i < n; i++) {
             if (i >= escapeThreshold){
                 escaping = true;
@@ -152,6 +172,7 @@ public class DatapointHistogram {
         }
 
         // if escaping, add escape sym to freq map
+        // this could be true due to prior escape
         if (escaping)
             rawFrequencyMap.put(ESCAPE_SYMBOL, escapedTotal);
 
@@ -184,12 +205,13 @@ public class DatapointHistogram {
         for (int i = 1; i < n; i++)
             cumulative[i] = cumulative[i - 1] + frequencies[i - 1];
 
-//        System.out.println("Symbols: ");
-//        for (int i = 0; i < n; i++) {
-//            System.out.println("Sym: " + invSymbolsMapping.get(i) + "freq " + frequencies[i]);
-//        }
-//        System.out.println("\n\n");
-
+        if (DEBUG) {
+            System.out.println("Symbols: ");
+            for (int i = 0; i < n; i++) {
+                System.out.println("Sym: " + invSymbolsMapping.get(i) + "freq " + frequencies[i]);
+            }
+            System.out.println("\n\n");
+        }
         sym = new EliasFanoIndexedMonotoneLongBigList(new IntArrayList(cumulative));
     }
 

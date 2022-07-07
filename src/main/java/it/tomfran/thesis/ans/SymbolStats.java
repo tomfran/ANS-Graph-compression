@@ -61,8 +61,6 @@ public class SymbolStats {
 
         // cycle through symbols and escape the apax
         int freqThreshold = (int) ((double) totalTmp / 100 * escapeThresholdPercentage);
-//        int freqThreshold = 0;
-//        freqThreshold = Math.max(freqThreshold, 1);
         int v, escapedTotal = 0;
         int[] keysBeforeCutting = getKeysArray(freqMap);
         for (int k : keysBeforeCutting){

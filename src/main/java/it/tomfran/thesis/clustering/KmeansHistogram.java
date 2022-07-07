@@ -107,9 +107,7 @@ public class KmeansHistogram {
                 System.out.println("Early termination");
             System.out.println("Clustering completed");
         }
-
     }
-
 
     public void lazyFit(boolean sorting) {
         int ind;

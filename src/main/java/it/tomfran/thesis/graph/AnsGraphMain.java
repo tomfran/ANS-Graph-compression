@@ -44,13 +44,19 @@ public class AnsGraphMain {
     }
 
     public static void main(String[] args) {
-        if (args.length < 2){
-            System.out.println("Enter graph directory and graph name, e.g. it-wiki itwiki-2013");
+        if (args.length < 3){
+            System.out.println("Enter graph directory, graph name and mode, with req parameters");
+            System.out.println("Mode: \n" +
+                            "\t- 1: optimal, no params\n" +
+                            "\t- 2: escaping, params: ESCAPE-PERC\n" +
+                            "\t- 3: clustering, params: K ITER PRIOR\n");
             System.exit(0);
         }
         try {
             String graphDir = args[0];
             String graphName = args[1];
+            int mode = Integer.parseInt(args[2]);
+
             String bvPath = "data/" + graphDir + "/bv/" + graphName;
             String efPath = "data/" + graphDir + "/ef/" + graphName;
             String ansPath;
@@ -61,31 +67,48 @@ public class AnsGraphMain {
             System.out.println("\t- nodes: " + g.numNodes());
             System.out.println("\t- arcs: " + g.numArcs());
 
-//            System.out.println("\n\n### Optimal store ###");
-//            ansPath = "data/" + graphDir + "/optimal_ans/" + graphName;
-//            AnsGraph.store(g, ansPath);
-////            System.out.println("Integrity check: " + integrityCheck(g, AnsGraph.load(ansPath)));
-//
-//            System.out.println("\n\n### Escaping ########");
-//            for (int i = 1; i <= 30; i+= (i < 5)? 1 : 5) {
-//                System.out.println("- " + i);
-//                ansPath = "data/" + graphDir + "/escaped_ans/" + String.format("%03d_", i) + graphName;
-//                AnsGraph.storeEscape(g, ansPath, i);
-//            }
+            if (mode == 1) {
+                System.out.println("\n\n### Optimal store ###");
+                ansPath = "data/" + graphDir + "/optimal_ans/" + graphName;
+                AnsGraph.store(g, ansPath);
+//                System.out.println("Integrity check: " + integrityCheck(g, AnsGraph.load(ansPath)));
+            }
 
-            System.out.println("\n\n### Clustering ######");
+            if (mode == 2) {
+                System.out.println("\n\n### Escaping ########");
+                if (args.length < 4) {
+                    System.out.println("Insert ESCAPE percentage after mode");
+                    System.exit(0);
+                }
+                int esc = Integer.parseInt(args[3]);
+                System.out.println("\nEscape: " + esc);
+                ansPath = "data/" + graphDir + "/escaped_ans/" + String.format("%03d_", esc) + graphName;
+                AnsGraph.storeEscape(g, ansPath, esc);
+//                System.out.println("Integrity check: " + integrityCheck(g, AnsGraph.load(ansPath)));
+            }
 
-            for (int i = 1000; i <= 1000000; i*=10) {
-                if (i > g.numNodes()) continue;
-                int k = g.numNodes()/i;
-                int iter = 0;
-                System.out.println("- K: " + k + ", iter: "  + 0);
-                ansPath = "data/" + graphDir + "/clustered_ans/" + k + "_K_" + iter + "_iter_" + graphName;
-                AnsGraph.storeCluster(g, ansPath, k, iter, 0);
+            if (mode == 3) {
+                System.out.println("\n\n### Clustering ######");
+                if (args.length < 6) {
+                    System.out.println("Insert K, ITER, PRIOR after mode");
+                    System.exit(0);
+                }
+                int k = Integer.parseInt(args[3]);
+                int iter = Integer.parseInt(args[4]);
+                int prior = Integer.parseInt(args[5]);
+                if (k > g.numNodes() || prior > 100) {
+                    System.out.println("K must be smaller than num nodes, prior must be under 100");
+                    System.exit(0);
+                }
+                System.out.println("\n- K: " + k + ", iter: " + iter + ", prior: " + prior);
+                ansPath = "data/" + graphDir + "/clustered_ans/" + k + "_K_" + String.format("%03d_", iter) + "_iter_" + String.format("%03d_", prior) + "_prior_" + graphName;
+                AnsGraph.storeCluster(g, ansPath, k, iter, prior);
+//                System.out.println("Integrity check: " + integrityCheck(g, AnsGraph.load(ansPath)));
             }
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.out.println("Something went wrong");
+            e.printStackTrace();
         }
 
     }
