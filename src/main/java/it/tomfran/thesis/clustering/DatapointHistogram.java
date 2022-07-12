@@ -112,6 +112,7 @@ public class DatapointHistogram {
         double initialEntropy = 0;
         int cs, ls = 0;
         int ansModelBits = 0;
+        int ansFreqBits = 0, prev = 0;
         if (DEBUG)
             System.out.println("Original keys: ");
         for (int k : keys) {
@@ -121,6 +122,8 @@ public class DatapointHistogram {
                 System.out.println("- " + k + " ps: " + (double) cs / total + " entr: " + cs * log2((double) cs / total));
             initialEntropy -= cs * log2((double) cs / total);
             ansModelBits += ansFreqLen(k);
+            ansFreqBits += cs - prev;
+            prev = cs;
         }
         if (DEBUG)
             System.out.println("Full entropy: " + initialEntropy);
@@ -137,31 +140,35 @@ public class DatapointHistogram {
         symsEntropy = initialEntropy;
         escapeEntropy = (escaping)? -(escapeFreq * log2((double) escapeFreq / total)) : 0;
         escapeBits = (escaping)? escapeFreq * ls : 0;
-        minOverall = initialEntropy + escapeEntropy + escapeBits + ansModelBits;
+        minOverall = initialEntropy + escapeEntropy + escapeBits + ansModelBits + ansFreqBits;
+        System.out.println(keys.length + " : " + minOverall);
         if (DEBUG)
             System.out.println("Started computing threshold, minoverall: " + minOverall);
         for (int i = n-1; i >= 0; i--) {
             // get frequency and remove its entropy
             cs = rawFrequencyMap.get(keys[i]);
             ansModelBits -= ansFreqLen(keys[i]);
+            ansFreqBits -= ansFreqLen(cs);
             symsEntropy += (cs * log2((double) cs / total));
             // add sym to escape symbol, updaing escape entropy
             escapeFreq += cs;
             escapeEntropy = -(escapeFreq * log2((double) escapeFreq / total));
             // TODO this is technically wrong, as ls might be higher due to prior escaping
-            escapeBits = escapeFreq * ls;
-            currOverall = symsEntropy + escapeEntropy + escapeBits + ansModelBits;
+            escapeBits = (int)((escapeFreq * ls)*0.7);
+            currOverall = symsEntropy + escapeEntropy + escapeBits + ansModelBits + ansFreqBits + ansFreqLen(escapeFreq);
             if (DEBUG)
                 System.out.println(" overall: " +  currOverall + "Syms ent: " + symsEntropy + " Esc ent: " + escapeEntropy + " Esc bits: " + escapeBits + "Ans model bits" + ansModelBits);
             if (currOverall < minOverall){
                 escapeThreshold = i;
                 minOverall = currOverall;
             }
+            System.out.println(i + " : " + currOverall);
         }
         if (DEBUG) {
             System.out.println("Total sims: " + n + " escaped: " + (n - escapeThreshold));
             System.out.println("EscapeThreshold: " + escapeThreshold);
         }
+        System.out.println("CHOSEN: " + escapeThreshold);
         // iterate over the keys to remove the escaped ones
         for (int i = 0; i < n; i++) {
             if (i >= escapeThreshold){

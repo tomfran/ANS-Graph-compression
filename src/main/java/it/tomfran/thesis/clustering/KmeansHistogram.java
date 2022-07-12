@@ -5,7 +5,7 @@ import static it.tomfran.thesis.clustering.DatapointHistogram.buildCentroidFromC
 public class KmeansHistogram {
 
     protected static final int CLUSTER_BUILD_PRECISION = 2048;
-    private static final boolean PROGRESS = true;
+    private static final boolean PROGRESS = false;
     public DatapointHistogram[] centroid;
     public int K;
     protected int iterations;
@@ -43,7 +43,8 @@ public class KmeansHistogram {
             centroid[i].buildAnsStructures();
             total += centroid[i].symbolsMapping.size();
         }
-        System.out.println("Average number of symbols after excaping: " + (double)total/K);
+        if (PROGRESS)
+            System.out.println("Average number of symbols after excaping: " + (double)total/K);
     }
 
     private DatapointHistogram[] getClusterPoints(int i) {
@@ -67,7 +68,8 @@ public class KmeansHistogram {
         for (int k = 0; k < K; k++) {
             total += centroid[k].rawFrequencyMap.size();
         }
-        System.out.println("Average number of symbols per cluster: " + (double)total/K);
+        if (PROGRESS)
+            System.out.println("Average number of symbols per cluster: " + (double)total/K);
 
 
         boolean stop = false;
