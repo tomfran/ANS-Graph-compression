@@ -32,18 +32,25 @@ public class KmeansHistogram {
 
     private void updateCentroids() {
         for (int i = 0; i < K; i++) {
-            centroid[i] = buildCentroidFromCluster(getClusterPoints(i),
-                    CLUSTER_BUILD_PRECISION);
+            if (PROGRESS && clusterCardinality[i] == 0)
+                System.out.println("Cluster "+ i + " is empty");
+            if (clusterCardinality[i] > 0) {
+                if (PROGRESS)
+                    System.out.println("$$$ Cluster: " + i);
+                centroid[i] = buildCentroidFromCluster(getClusterPoints(i));
+            }
         }
     }
 
     private void buildCentroidAnsStructures() {
         int total = 0;
         for (int i = 0; i < K; i++) {
+            if (clusterCardinality[i] == 0) continue;
             centroid[i].buildAnsStructures();
             total += centroid[i].symbolsMapping.size();
         }
-        System.out.println("Average number of symbols after excaping: " + (double)total/K);
+        if (PROGRESS)
+            System.out.println("Average number of symbols after excaping: " + (double)total/K);
     }
 
     private DatapointHistogram[] getClusterPoints(int i) {
@@ -67,7 +74,8 @@ public class KmeansHistogram {
         for (int k = 0; k < K; k++) {
             total += centroid[k].rawFrequencyMap.size();
         }
-        System.out.println("Average number of symbols per cluster: " + (double)total/K);
+        if (PROGRESS)
+            System.out.println("Average number of symbols per cluster: " + (double)total/K);
 
 
         boolean stop = false;
@@ -77,12 +85,12 @@ public class KmeansHistogram {
         int i;
         for (i = 0; i < iterations && !stop; i++) {
             if (PROGRESS)
-                System.out.println("Iteration: " + i);
+                System.out.println("\n\nIteration: " + i);
             stop = true;
             // for each point, compute the closest centroid
             for (int j = 0; j < n; j++) {
-//                if (PROGRESS && ((j % 10000) == 0))
-//                    System.out.println("Point: " + j + "/" + n);
+                if (PROGRESS && ((j % (n/10)) == 0))
+                    System.out.println("Point: " + j + "/" + n);
                 // current distance from the centroid
                 minDistance = data[j].distance(centroid[pointMapping[j]]);
                 // find the closest centroid and update distance

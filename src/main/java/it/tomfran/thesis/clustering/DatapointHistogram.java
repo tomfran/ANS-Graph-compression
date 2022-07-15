@@ -13,8 +13,9 @@ public class DatapointHistogram {
 
     static final int DEFAULT_FREQ = 1;
     private static final boolean DEBUG = false;
-    private static final boolean PROGRESS = false;
+    private static final boolean PROGRESS = true;
     private static final int PRECISION = 1024;
+    public final double alpha = 0.8;
 
     public Int2IntOpenHashMap symbolsMapping;
     public Int2IntOpenHashMap invSymbolsMapping;
@@ -42,7 +43,7 @@ public class DatapointHistogram {
         this.total = total;
     }
 
-    static DatapointHistogram buildCentroidFromCluster(DatapointHistogram[] points, int precision) {
+    static DatapointHistogram buildCentroidFromCluster(DatapointHistogram[] points) {
         if (PROGRESS)
             System.out.println("Build from centroid, received " + points.length + " points.");
 
@@ -154,7 +155,7 @@ public class DatapointHistogram {
             escapeFreq += cs;
             escapeEntropy = -(escapeFreq * log2((double) escapeFreq / total));
             // TODO this is technically wrong, as ls might be higher due to prior escaping
-            escapeBits = (int)((escapeFreq * ls)*0.7);
+            escapeBits = (int)((escapeFreq * ls)*alpha);
             currOverall = symsEntropy + escapeEntropy + escapeBits + ansModelBits + ansFreqBits + ansFreqLen(escapeFreq);
             if (DEBUG)
                 System.out.println(" overall: " +  currOverall + "Syms ent: " + symsEntropy + " Esc ent: " + escapeEntropy + " Esc bits: " + escapeBits + "Ans model bits" + ansModelBits);
@@ -168,6 +169,7 @@ public class DatapointHistogram {
             System.out.println("Total sims: " + n + " escaped: " + (n - escapeThreshold));
             System.out.println("EscapeThreshold: " + escapeThreshold);
         }
+//        System.out.println("CHOSEN: " + escapeThreshold);
         // iterate over the keys to remove the escaped ones
         for (int i = 0; i < n; i++) {
             if (i >= escapeThreshold){
@@ -224,7 +226,6 @@ public class DatapointHistogram {
     public double distance(DatapointHistogram h) {
 //        return (KLDivergence(h) + h.KLDivergence(this)) / 2;
         return KLDivergence(h);
-
     }
 
     public DatapointHistogram copy() {

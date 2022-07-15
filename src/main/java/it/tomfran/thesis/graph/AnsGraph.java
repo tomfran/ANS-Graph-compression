@@ -37,7 +37,7 @@ public class AnsGraph extends ImmutableGraph {
     public static final String MODEL_EXTENSION = ".model";
     public static final String PROPERTIES_EXTENSION = ".properties";
     public static final int P_RANGE = 10;
-    private static final boolean PROGRESS = true;
+    private static final boolean PROGRESS = false;
 
     public int escapeBits;
     /** Elias fano sequence for the offsets. */
@@ -213,7 +213,6 @@ public class AnsGraph extends ImmutableGraph {
         final FileOutputStream propertyFile = new FileOutputStream(basename + PROPERTIES_EXTENSION);
         properties.store(propertyFile, "AnsGraph properties");
         propertyFile.close();
-
     }
 
     public static int[] computeGaps(int[] arr, long length) {
