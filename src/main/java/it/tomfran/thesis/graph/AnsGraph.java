@@ -36,7 +36,7 @@ public class AnsGraph extends ImmutableGraph {
     public static final String OFFSETS_EXTENSION = ".offset";
     public static final String MODEL_EXTENSION = ".model";
     public static final String PROPERTIES_EXTENSION = ".properties";
-    public static final int P_RANGE = 10;
+    public static final int P_RANGE = 12;
     private static final boolean PROGRESS = false;
 
     public int escapeBits;
