@@ -16,11 +16,14 @@ public class DatapointHistogram {
     private static final boolean PROGRESS = true;
     private static final int PRECISION = 1024;
     public final double alpha = 0.8;
+    public final double SYM_PERC_DIST = 0.3;
 
     public Int2IntOpenHashMap symbolsMapping;
     public Int2IntOpenHashMap invSymbolsMapping;
     public int[] frequencies;
     public int total;
+    public int N;
+    public int[] keys;
     public int[] cumulative;
     public EliasFanoIndexedMonotoneLongBigList sym;
 
@@ -30,6 +33,9 @@ public class DatapointHistogram {
     public DatapointHistogram(SymbolStats s) {
         this.total = s.total;
         buildRawFrequencyMap(s.rawFrequencies, s.symbolsMapping);
+        this.keys = getKeysArray(rawFrequencyMap);
+        IntArrays.mergeSort(this.keys, (k1, k2) -> rawFrequencyMap.get(k2) - rawFrequencyMap.get(k1));
+        this.N = Math.min(1, (int)(rawFrequencyMap.size()*SYM_PERC_DIST));
     }
 
     private void buildRawFrequencyMap(int[] frequencies, Int2IntOpenHashMap symMapping) {
@@ -75,11 +81,17 @@ public class DatapointHistogram {
 
     public float KLDivergence(DatapointHistogram h) {
         float ret = 0, p1, p2;
-        for (int sym : rawFrequencyMap.keySet()) {
-            p1 = getSymProbability(sym);
-            p2 = h.getSymProbability(sym);
+        for (int i = 0; i < N; i++) {
+            p1 = getSymProbability(keys[i]);
+            p2 = h.getSymProbability(keys[i]);
             ret += p1 * Math.log(p1 / p2);
         }
+
+//        for (int sym : rawFrequencyMap.keySet()) {
+//            p1 = getSymProbability(sym);
+//            p2 = h.getSymProbability(sym);
+//            ret += p1 * Math.log(p1 / p2);
+//        }
         return ret;
     }
 
