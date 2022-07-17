@@ -1,9 +1,6 @@
 package it.tomfran.thesis.ans;
 
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntArrays;
-import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.*;
 
 public class SymbolStats {
 
@@ -58,27 +55,31 @@ public class SymbolStats {
             totalTmp++;
         }
 
-
-        // cycle through symbols and escape the apax
-        int freqThreshold = (int) ((double) totalTmp / 100 * escapeThresholdPercentage);
-        int v, escapedTotal = 0;
+        int v, escapedTotal = 0, k;
         int[] keysBeforeCutting = getKeysArray(freqMap);
-        for (int k : keysBeforeCutting){
+        IntArrays.mergeSort(keysBeforeCutting,
+                ((IntComparator) (k1, k2) -> freqMap.get(k1) - freqMap.get(k2))
+                        .thenComparing((k1, k2) -> k2-k1));
+
+        // math min???
+        int threshold = (int)((double)freqMap.size()/100*escapeThresholdPercentage);
+        escaping = (threshold>0);
+        for (int i = 0; i < threshold; i++) {
+            k = keysBeforeCutting[i];
             v = freqMap.get(k);
-            if (v <= freqThreshold){
-                escaping = true;
-                freqMap.remove(k);
-                escapedTotal += v;
-            }
+            freqMap.remove(k);
+            escapedTotal += v;
         }
 
         if (escaping)
             freqMap.put(ESCAPE_SYMBOL, escapedTotal);
 
-        // sort elements by value
+        // sort elements by frequency and inverse magnitute
         int n = freqMap.size();
         int[] keys = getKeysArray(freqMap);
-        IntArrays.mergeSort(keys, (k1, k2) -> freqMap.get(k2) - freqMap.get(k1));
+        IntArrays.mergeSort(keys,
+                ((IntComparator) (k1, k2) -> freqMap.get(k2) - freqMap.get(k1))
+                        .thenComparing((k1, k2) -> k1-k2));
 
         // build symbols mappings
         symbolsMapping = new Int2IntOpenHashMap();
@@ -88,7 +89,6 @@ public class SymbolStats {
         rawFrequencies = new int[n];
         total = 0;
         int normFreq;
-        int k;
         for (int i = 0; i < n; i++) {
             k = keys[i];
             symbolsMapping.put(k, i);
