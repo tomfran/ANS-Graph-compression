@@ -101,7 +101,7 @@ public class AnsGraphMain {
                     System.exit(0);
                 }
                 System.out.println("\n- K: " + k + ", iter: " + iter + ", prior: " + prior);
-                ansPath = "data/" + graphDir + "/clustered_ans/" + k + "_K_" + String.format("%03d_", iter) + "_iter_" + String.format("%03d_", prior) + "_prior_" + graphName;
+                ansPath = "data/" + graphDir + "/clustered_ans/" + k + "_k_" + String.format("%03d_", iter) + "_i_" + String.format("%03d_", prior) + "_p_" + graphName;
                 AnsGraph.storeCluster(g, ansPath, k, iter, prior);
 //                System.out.println("Integrity check: " + integrityCheck(g, AnsGraph.load(ansPath)));
             }

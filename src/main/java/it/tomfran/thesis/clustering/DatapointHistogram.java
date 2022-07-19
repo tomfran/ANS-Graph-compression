@@ -3,7 +3,10 @@ package it.tomfran.thesis.clustering;
 
 import it.tomfran.thesis.ans.SymbolStats;
 import it.unimi.dsi.bits.Fast;
-import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.sux4j.util.EliasFanoIndexedMonotoneLongBigList;
 
 import static it.tomfran.thesis.ans.SymbolStats.ESCAPE_SYMBOL;
@@ -11,11 +14,10 @@ import static it.tomfran.thesis.ans.SymbolStats.getKeysArray;
 
 public class DatapointHistogram {
 
-    static final int DEFAULT_FREQ = 1;
     private static final boolean DEBUG = false;
     private static final boolean PROGRESS = true;
-    private static final int PRECISION = 1024;
-    public final double alpha = 0.8;
+    private static final int PRECISION = 2048;
+    public final double alpha = 0.7;
     public final double SYM_PERC_DIST = 0.3;
 
     public Int2IntOpenHashMap symbolsMapping;
@@ -35,13 +37,7 @@ public class DatapointHistogram {
         buildRawFrequencyMap(s.rawFrequencies, s.symbolsMapping);
         this.keys = getKeysArray(rawFrequencyMap);
         IntArrays.mergeSort(this.keys, (k1, k2) -> rawFrequencyMap.get(k2) - rawFrequencyMap.get(k1));
-        this.N = Math.min(1, (int)(rawFrequencyMap.size()*SYM_PERC_DIST));
-    }
-
-    private void buildRawFrequencyMap(int[] frequencies, Int2IntOpenHashMap symMapping) {
-        this.rawFrequencyMap = new Int2IntOpenHashMap();
-        for (Int2IntMap.Entry e : symMapping.int2IntEntrySet())
-            rawFrequencyMap.put(e.getIntKey(), frequencies[e.getIntValue()]);
+        this.N = Math.min(1, (int) (rawFrequencyMap.size() * SYM_PERC_DIST));
     }
 
     public DatapointHistogram(Int2IntOpenHashMap rawFrequencyMap, int total) {
@@ -58,7 +54,7 @@ public class DatapointHistogram {
         Int2IntOpenHashMap rawFrequencyMap = new Int2IntOpenHashMap();
         int total = 0, k, v;
         for (DatapointHistogram p : points)
-            for (Int2IntMap.Entry e : p.rawFrequencyMap.int2IntEntrySet()){
+            for (Int2IntMap.Entry e : p.rawFrequencyMap.int2IntEntrySet()) {
                 k = e.getIntKey();
                 v = e.getIntValue();
                 rawFrequencyMap.put(k, v + rawFrequencyMap.getOrDefault(k, 0));
@@ -69,6 +65,12 @@ public class DatapointHistogram {
             System.out.println("Computed points intersection, total sym: " + rawFrequencyMap.size());
 
         return new DatapointHistogram(rawFrequencyMap, total);
+    }
+
+    private void buildRawFrequencyMap(int[] frequencies, Int2IntOpenHashMap symMapping) {
+        this.rawFrequencyMap = new Int2IntOpenHashMap();
+        for (Int2IntMap.Entry e : symMapping.int2IntEntrySet())
+            rawFrequencyMap.put(e.getIntKey(), frequencies[e.getIntValue()]);
     }
 
     private int getSymFrequency(int sym) {
@@ -95,11 +97,11 @@ public class DatapointHistogram {
         return ret;
     }
 
-    private double log2(double x){
-        return Math.log(x)/Math.log(2);
+    private double log2(double x) {
+        return Math.log(x) / Math.log(2);
     }
 
-    private int ansFreqLen(int x){
+    private int ansFreqLen(int x) {
         final int msb = Fast.mostSignificantBit(x);
         return 2 * msb + 1;
     }
@@ -123,20 +125,21 @@ public class DatapointHistogram {
 
         // compute cost of not escaping, so entropy of the encoding plus ans model bits
         double initialEntropy = 0;
-        int cs, ls = 0;
+        int cs, ls = 0, normCs;
         int ansModelBits = 0;
         int ansFreqBits = 0, prev = 0;
         if (DEBUG)
             System.out.println("Original keys: ");
         for (int k : keys) {
             cs = rawFrequencyMap.get(k);
-            ls = Math.max(ls, (int)(log2(k) + 1));
+            ls = Math.max(ls, (int) (log2(k) + 1));
             if (DEBUG)
                 System.out.println("- " + k + " ps: " + (double) cs / total + " entr: " + cs * log2((double) cs / total));
             initialEntropy -= cs * log2((double) cs / total);
             ansModelBits += ansFreqLen(k);
-            ansFreqBits += cs - prev;
-            prev = cs;
+            normCs = Math.max(1, (int)((double) cs / total * PRECISION));
+            ansFreqBits += normCs - prev;
+            prev = normCs;
         }
         if (DEBUG)
             System.out.println("Full entropy: " + initialEntropy);
@@ -151,27 +154,28 @@ public class DatapointHistogram {
         // min overall value, entropy of syms encoding, entropy of escape encoding, current
         double minOverall, symsEntropy, escapeEntropy, currOverall;
         symsEntropy = initialEntropy;
-        escapeEntropy = (escaping)? -(escapeFreq * log2((double) escapeFreq / total)) : 0;
-        escapeBits = (escaping)? escapeFreq * ls : 0;
+        escapeEntropy = (escaping) ? -(escapeFreq * log2((double) escapeFreq / total)) : 0;
+        escapeBits = (escaping) ? escapeFreq * ls : 0;
         minOverall = initialEntropy + escapeEntropy + escapeBits + ansModelBits + ansFreqBits;
 //        System.out.println(keys.length + " : " + minOverall);
         if (DEBUG)
             System.out.println("Started computing threshold, minoverall: " + minOverall);
-        for (int i = n-1; i >= 0; i--) {
+        for (int i = n - 1; i >= 0; i--) {
             // get frequency and remove its entropy
             cs = rawFrequencyMap.get(keys[i]);
+            normCs = Math.max(1, (int)((double) cs / total * PRECISION));
             ansModelBits -= ansFreqLen(keys[i]);
-            ansFreqBits -= ansFreqLen(cs);
+            ansFreqBits -= ansFreqLen(normCs);
             symsEntropy += (cs * log2((double) cs / total));
             // add sym to escape symbol, updaing escape entropy
             escapeFreq += cs;
             escapeEntropy = -(escapeFreq * log2((double) escapeFreq / total));
             // TODO this is technically wrong, as ls might be higher due to prior escaping
-            escapeBits = (int)((escapeFreq * ls)*alpha);
+            escapeBits = (int) ((escapeFreq * ls) * alpha);
             currOverall = symsEntropy + escapeEntropy + escapeBits + ansModelBits + ansFreqBits + ansFreqLen(escapeFreq);
             if (DEBUG)
-                System.out.println(" overall: " +  currOverall + "Syms ent: " + symsEntropy + " Esc ent: " + escapeEntropy + " Esc bits: " + escapeBits + "Ans model bits" + ansModelBits);
-            if (currOverall < minOverall){
+                System.out.println(" overall: " + currOverall + "Syms ent: " + symsEntropy + " Esc ent: " + escapeEntropy + " Esc bits: " + escapeBits + "Ans model bits" + ansModelBits);
+            if (currOverall < minOverall) {
                 escapeThreshold = i;
                 minOverall = currOverall;
             }
@@ -184,7 +188,7 @@ public class DatapointHistogram {
 //        System.out.println("CHOSEN: " + escapeThreshold);
         // iterate over the keys to remove the escaped ones
         for (int i = 0; i < n; i++) {
-            if (i >= escapeThreshold){
+            if (i >= escapeThreshold) {
                 escaping = true;
                 escapedTotal += rawFrequencyMap.get(keys[i]);
                 rawFrequencyMap.remove(keys[i]);

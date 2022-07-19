@@ -4,7 +4,6 @@ import static it.tomfran.thesis.clustering.DatapointHistogram.buildCentroidFromC
 
 public class KmeansHistogram {
 
-    protected static final int CLUSTER_BUILD_PRECISION = 2048;
     private static final boolean PROGRESS = true;
     public DatapointHistogram[] centroid;
     public int K;

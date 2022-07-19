@@ -49,19 +49,19 @@ public class SymbolStats {
         // count element frequencies
         int totalTmp = 0;
         Int2IntOpenHashMap freqMap = new Int2IntOpenHashMap();
-
         for (int i = 0; i < length; i++) {
             freqMap.put(iterator[i], freqMap.getOrDefault(iterator[i], 0) + 1);
             totalTmp++;
         }
 
+        // sort keys by frequency and value
         int v, escapedTotal = 0, k;
         int[] keysBeforeCutting = getKeysArray(freqMap);
         IntArrays.mergeSort(keysBeforeCutting,
                 ((IntComparator) (k1, k2) -> freqMap.get(k1) - freqMap.get(k2))
                         .thenComparing((k1, k2) -> k2-k1));
 
-        // math min???
+        // cut all keys that comes before the threshold
         int threshold = (int)((double)freqMap.size()/100*escapeThresholdPercentage);
         escaping = (threshold>0);
         for (int i = 0; i < threshold; i++) {
@@ -74,7 +74,7 @@ public class SymbolStats {
         if (escaping)
             freqMap.put(ESCAPE_SYMBOL, escapedTotal);
 
-        // sort elements by frequency and inverse magnitute
+        // sort elements by frequency and inverse value
         int n = freqMap.size();
         int[] keys = getKeysArray(freqMap);
         IntArrays.mergeSort(keys,
@@ -99,11 +99,16 @@ public class SymbolStats {
             rawFrequencies[i] = freqMap.get(k);
             total += frequencies[i];
         }
-
+        // add escape sym
         if (escaping)
             escapeIndex = symbolsMapping.get(ESCAPE_SYMBOL);
     }
 
+    /**
+     * Returns keys of a Int2IntOpenHashMap as an array
+     * @param m Int2IntOpenHashMap
+     * @return array with the keys.
+     */
     public static int[] getKeysArray(Int2IntOpenHashMap m) {
         int n = m.size();
         // sort elements by value

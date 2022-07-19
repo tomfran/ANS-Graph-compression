@@ -45,7 +45,10 @@ public class AnsModel {
         buildCumulativeSymbols();
     }
 
-
+    /**
+     * Build an ans model from a cluster centroid.
+     * @param centroid DatapointHistogram with and structures
+     */
     public AnsModel(DatapointHistogram centroid) {
         // this fields are common
         symbolsMapping = centroid.symbolsMapping;
@@ -62,6 +65,9 @@ public class AnsModel {
 
     }
 
+    /**
+     * Initialize the cumulative from the frequencies.
+     */
     public void buildCumulativeSymbols() {
         cumulative = new int[N];
         cumulative[0] = 1;
@@ -73,24 +79,49 @@ public class AnsModel {
         sym = new EliasFanoIndexedMonotoneLongBigList(new IntArrayList(cumulative));
     }
 
+    /**
+     * Get the frequency index of a given sym.
+     * @param sym symbol in the symbols mapping
+     * @return the index in the frequency array
+     */
     public int getSymbolMapping (int sym) {
         // if the symbol is escaped, it isn't in the symbols mapping, thus the
         // index of the escape sym is returned
         return symbolsMapping.getOrDefault(sym, escapeIndex);
     }
 
-    public int getInvSymbolMapping (int sym) {
-        return invSymbolsMapping.get(sym);
+    /**
+     * Get the symbol given an index.
+     * @param index index in the array
+     * @return the symbol with the given index
+     */
+    public int getInvSymbolMapping (int index) {
+        return invSymbolsMapping.get(index);
     }
 
+    /**
+     * Get the the symIndex-th frequency.
+     * @param symIndex index in the array
+     * @return the symIndex cell of frequencies array
+     */
     public int getFrequency(int symIndex) {
         return frequencies[symIndex];
     }
 
+    /**
+     * Get the symIndex-th cumulative.
+     * @param symIndex index in the array
+     * @return the symindex cell of cumulative array
+     */
     public int getCumulative(int symIndex) {
         return cumulative[symIndex];
     }
 
+    /**
+     * Gets the sym associated with a remainder.
+     * @param r remainder
+     * @returnm the symbol with max cumulative less than rs
+     */
     public int getRemainderSym(int r) {
         return (int) sym.weakPredecessorIndex(r);
     }
