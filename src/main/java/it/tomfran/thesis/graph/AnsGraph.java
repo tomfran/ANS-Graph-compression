@@ -28,7 +28,7 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 
 import static it.unimi.dsi.webgraph.EFGraph.loadLongBigList;
-import static java.lang.Math.max;
+import static java.lang.Math.*;
 
 public class AnsGraph extends ImmutableGraph {
 
@@ -101,24 +101,31 @@ public class AnsGraph extends ImmutableGraph {
         long numEscapes, maxEscapes, escapedEdges;
         numEscapes = maxEscapes = escapedEdges = 0;
 
+        // write first offset, current and prev to
+        // find offset gaps
         offsets.writeLongDelta(0);
-
-        int N = graph.numNodes();
-
         long current;
         long prev = 0;
 
-        int modelNum = 0;
+        int N = graph.numNodes();
+
+
+        int nodeIndex = 0;
         int i;
         if (PROGRESS) i = 0;
 
+        // compute sums of outdegree for clusters
+        int [] clustersOutdeg = null;
+
         // if clustering is selected, write all models to the stream
         if (method == "cluster") {
+            clustersOutdeg = new int[model.K];
             if (PROGRESS)
                 System.out.println("Writing cluster models on disk");
             for (int j = 0; j < model.K; j++)
                 modelBits += new AnsModel(model.centroid[j]).dump(modelStream);
         }
+
 
         for (final NodeIterator nodeIterator = graph.nodeIterator(); nodeIterator.hasNext(); ) {
             if (PROGRESS) {
@@ -141,8 +148,9 @@ public class AnsGraph extends ImmutableGraph {
                     SymbolStats symStats = new SymbolStats(succ, outdegree, P_RANGE, escapePercentage);
                     m = new AnsModel(symStats);
                 } else if (method == "cluster") {
-                    // model num in a counter for nodes, as in optimal you have a model for each node with oudeg > 0
-                    int clusterPos = model.getClusterIndex(modelNum);
+                    // model num is a counter for nodes, as in optimal you have a model for each node with oudeg > 0
+                    int clusterPos = model.getClusterIndex(nodeIndex);
+                    clustersOutdeg[clusterPos] += outdegree;
                     // build the centroid model
                     m = new AnsModel(model.centroid[clusterPos]);
                 }
@@ -151,12 +159,12 @@ public class AnsGraph extends ImmutableGraph {
 
                 // model id, state count, statelist to .graph file
                 if (method == "optimal") {
-                    successorsBits += e.dump(graphStream, modelNum);
+                    successorsBits += e.dump(graphStream, nodeIndex);
                     modelBits += m.dump(modelStream);
                 } else if (method == "cluster") {
-                    successorsBits += e.dump(graphStream, model.getClusterIndex(modelNum));
+                    successorsBits += e.dump(graphStream, model.getClusterIndex(nodeIndex));
                 }
-                modelNum++;
+                nodeIndex++;
                 // update properties
                 numStates += e.stateList.size();
                 maxStates = max(maxStates, e.stateList.size());
@@ -178,9 +186,6 @@ public class AnsGraph extends ImmutableGraph {
         offsets.close();
 
         final DecimalFormat format = new java.text.DecimalFormat("0.###");
-
-        if (method == "cluster") modelNum = model.K;
-
         final long writtenBits = new File(basename + GRAPH_EXTENSION).length() * 8 +
                 new File(basename + MODEL_EXTENSION).length() * 8;
 
@@ -190,10 +195,29 @@ public class AnsGraph extends ImmutableGraph {
         properties.setProperty("arcs", String.valueOf(numArcs));
         properties.setProperty("byteorder", byteOrder.toString());
         // models
-        properties.setProperty("numberofmodels", format.format(modelNum));
+        properties.setProperty("numberofmodels", format.format(((method == "cluster")? model.K : nodeIndex)));
         properties.setProperty("avgnumberofsymbols", format.format((double) numSymbols / N));
         properties.setProperty("maxnumberofsymbols", format.format(maxSymbols));
         properties.setProperty("bitsformodels", String.valueOf(modelBits));
+        if (method == "cluster") {
+            // clustering outdegree statistics
+            double avgDeg, stdDeg = 0;
+            int maxDeg = 0, minDeg = clustersOutdeg[0];
+            int t = 0;
+            for (int e : clustersOutdeg) {
+                t += e;
+                maxDeg = max(maxDeg, e);
+                minDeg = min(minDeg, e);
+            }
+            avgDeg = (double) t / model.K;
+            for (int e : clustersOutdeg)
+                stdDeg += pow(abs(e - avgDeg), 2);
+            stdDeg = sqrt(stdDeg / model.K);
+            properties.setProperty("avgsumdegcluster", format.format(avgDeg));
+            properties.setProperty("minsumdegcluster", String.valueOf(minDeg));
+            properties.setProperty("maxsumdegcluster", String.valueOf(maxDeg));
+            properties.setProperty("stdsumdegcluster", format.format(stdDeg));
+        }
         // states and escapes
         properties.setProperty("avgnumberofstates", format.format((double) numStates / N));
         properties.setProperty("maxnumberofstates", format.format(maxStates));
