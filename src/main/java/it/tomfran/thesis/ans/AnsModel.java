@@ -1,6 +1,5 @@
 package it.tomfran.thesis.ans;
 
-import it.tomfran.thesis.clustering.DatapointHistogram;
 import it.tomfran.thesis.io.LongWordBitReader;
 import it.tomfran.thesis.io.LongWordOutputBitStream;
 import it.unimi.dsi.fastutil.ints.*;
@@ -37,28 +36,15 @@ public class AnsModel {
         symbolsMapping = s.symbolsMapping;
         invSymbolsMapping = s.invSymbolsMapping;
         frequencies = s.frequencies;
-
         // cumulative
         N = frequencies.length;
         M = s.total;
         escapeIndex = s.escapeIndex;
-        buildCumulativeSymbols();
-    }
-
-    /**
-     * Build an ans model from a cluster centroid.
-     * @param centroid DatapointHistogram with and structures
-     */
-    public AnsModel(DatapointHistogram centroid) {
-        // this fields are common
-        symbolsMapping = centroid.symbolsMapping;
-        frequencies = centroid.frequencies;
-        invSymbolsMapping = centroid.invSymbolsMapping;
-        cumulative = centroid.cumulative;
-        sym = centroid.sym;
-        escapeIndex = centroid.escapeIndex;
-        M = centroid.total;
-        N = this.frequencies.length;
+        if (s.cumulative != null && s.sym != null){
+            cumulative = s.cumulative;
+            sym = s.sym;
+        } else
+            buildCumulativeSymbols();
     }
 
     public AnsModel() {
@@ -100,7 +86,7 @@ public class AnsModel {
     }
 
     /**
-     * Get the the symIndex-th frequency.
+     * Get the  symIndex-th frequency.
      * @param symIndex index in the array
      * @return the symIndex cell of frequencies array
      */
@@ -237,17 +223,17 @@ public class AnsModel {
      */
     public AnsModel copy() {
 
-        AnsModel m = new AnsModel();
-        m.N = N;
-        m.M = M;
-        m.symbolsMapping = symbolsMapping.clone();
-        m.invSymbolsMapping = invSymbolsMapping.clone();
-        m.frequencies = frequencies.clone();
-        m.cumulative = cumulative.clone();
-        m.escapeIndex = escapeIndex;
-        // TODO: check clone in ELIASfano..
-        m.sym = sym;
-        return m;
+        return this;
+//        AnsModel m = new AnsModel();
+//        m.N = N;
+//        m.M = M;
+////        m.symbolsMapping = symbolsMapping.clone();
+//        m.invSymbolsMapping = invSymbolsMapping.clone();
+//        m.frequencies = frequencies.clone();
+//        m.cumulative = cumulative.clone();
+//        m.escapeIndex = escapeIndex;
+//        m.sym = sym;
+//        return m;
     }
 
 }

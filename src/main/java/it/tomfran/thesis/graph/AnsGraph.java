@@ -3,10 +3,10 @@ package it.tomfran.thesis.graph;
 import it.tomfran.thesis.ans.AnsEncoder;
 import it.tomfran.thesis.ans.AnsModel;
 import it.tomfran.thesis.ans.SymbolStats;
-import it.tomfran.thesis.clustering.DatapointHistogram;
-import it.tomfran.thesis.clustering.KmeansHistogram;
+import it.tomfran.thesis.clustering.GrayCodePartitions;
 import it.tomfran.thesis.io.LongWordBitReader;
 import it.tomfran.thesis.io.LongWordOutputBitStream;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongBigList;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.io.InputBitStream;
@@ -51,7 +51,6 @@ public class AnsGraph extends ImmutableGraph {
     /** LongWordBitReader to read outdegrees.*/
     protected LongWordBitReader outdegreeLongWordBitReader;
 
-
     public AnsGraph(int numNodes, AnsModel[] ansModels, LongBigList offsets, LongBigList graph, LongWordBitReader outdegreeLongWordBitReader, int escapeBits) {
         this.numNodes = numNodes;
         this.ansModels = ansModels;
@@ -61,8 +60,8 @@ public class AnsGraph extends ImmutableGraph {
         this.escapeBits = escapeBits;
     }
 
-    public static void storeCluster(ImmutableGraph graph, CharSequence basename, int clusters, int iterations, int priorEscapePerc) throws IOException {
-        KmeansHistogram model = computeClusters(graph, clusters, iterations, priorEscapePerc);
+    public static void storeCluster(ImmutableGraph graph, CharSequence basename, int clusters, int priorEscapePerc, boolean clusterEscape) throws IOException {
+        GrayCodePartitions model = computePartitions(graph, clusters, priorEscapePerc, clusterEscape);
         storeInternal(graph, basename, "cluster", model, -1);
     }
 
@@ -74,7 +73,7 @@ public class AnsGraph extends ImmutableGraph {
         storeInternal(graph, basename, "optimal", null, 0);
     }
 
-    public static void storeInternal(ImmutableGraph graph, CharSequence basename, CharSequence method, KmeansHistogram model, int escapePercentage) throws IOException {
+    public static void storeInternal(ImmutableGraph graph, CharSequence basename, CharSequence method, GrayCodePartitions model, int escapePercentage) throws IOException {
 
         ByteOrder byteOrder = ByteOrder.nativeOrder();
 
@@ -108,32 +107,14 @@ public class AnsGraph extends ImmutableGraph {
         long prev = 0;
 
         int N = graph.numNodes();
-
-
         int nodeIndex = 0;
-        int i;
-        if (PROGRESS) i = 0;
-
-        // compute sums of outdegree for clusters
-        int [] clustersOutdeg = null;
 
         // if clustering is selected, write all models to the stream
-        if (method == "cluster") {
-            clustersOutdeg = new int[model.K];
-            if (PROGRESS)
-                System.out.println("Writing cluster models on disk");
-            for (int j = 0; j < model.K; j++)
-                modelBits += new AnsModel(model.centroid[j]).dump(modelStream);
-        }
-
+        if (method == "cluster")
+            for (int j = 0; j < model.partitionSymbolStats.length; j++)
+                modelBits += new AnsModel(model.partitionSymbolStats[j]).dump(modelStream);
 
         for (final NodeIterator nodeIterator = graph.nodeIterator(); nodeIterator.hasNext(); ) {
-            if (PROGRESS) {
-                if ((i % 1000000) == 0) {
-                    System.out.println("ANS graph compression: node -> " + i);
-                }
-                i++;
-            }
             nodeIterator.nextInt();
             int outdegree = nodeIterator.outdegree();
             numArcs += outdegree;
@@ -147,13 +128,9 @@ public class AnsGraph extends ImmutableGraph {
                 if (method == "optimal") {
                     SymbolStats symStats = new SymbolStats(succ, outdegree, P_RANGE, escapePercentage);
                     m = new AnsModel(symStats);
-                } else if (method == "cluster") {
-                    // model num is a counter for nodes, as in optimal you have a model for each node with oudeg > 0
-                    int clusterPos = model.getClusterIndex(nodeIndex);
-                    clustersOutdeg[clusterPos] += outdegree;
-                    // build the centroid model
-                    m = new AnsModel(model.centroid[clusterPos]);
-                }
+                } else if (method == "cluster")
+                    m = new AnsModel(model.getPartition(nodeIndex));
+
                 AnsEncoder e = new AnsEncoder(m);
                 e.encodeAll(succ, outdegree);
 
@@ -161,9 +138,9 @@ public class AnsGraph extends ImmutableGraph {
                 if (method == "optimal") {
                     successorsBits += e.dump(graphStream, nodeIndex);
                     modelBits += m.dump(modelStream);
-                } else if (method == "cluster") {
-                    successorsBits += e.dump(graphStream, model.getClusterIndex(nodeIndex));
-                }
+                } else if (method == "cluster")
+                    successorsBits += e.dump(graphStream, model.getPartitionIndex(nodeIndex));
+
                 nodeIndex++;
                 // update properties
                 numStates += e.stateList.size();
@@ -195,29 +172,10 @@ public class AnsGraph extends ImmutableGraph {
         properties.setProperty("arcs", String.valueOf(numArcs));
         properties.setProperty("byteorder", byteOrder.toString());
         // models
-        properties.setProperty("numberofmodels", format.format(((method == "cluster")? model.K : nodeIndex)));
+        properties.setProperty("numberofmodels", format.format(((method == "cluster")? model.partitionSymbolStats.length : nodeIndex)));
         properties.setProperty("avgnumberofsymbols", format.format((double) numSymbols / N));
         properties.setProperty("maxnumberofsymbols", format.format(maxSymbols));
         properties.setProperty("bitsformodels", String.valueOf(modelBits));
-        if (method == "cluster") {
-            // clustering outdegree statistics
-            double avgDeg, stdDeg = 0;
-            int maxDeg = 0, minDeg = clustersOutdeg[0];
-            int t = 0;
-            for (int e : clustersOutdeg) {
-                t += e;
-                maxDeg = max(maxDeg, e);
-                minDeg = min(minDeg, e);
-            }
-            avgDeg = (double) t / model.K;
-            for (int e : clustersOutdeg)
-                stdDeg += pow(abs(e - avgDeg), 2);
-            stdDeg = sqrt(stdDeg / model.K);
-            properties.setProperty("avgsumdegcluster", format.format(avgDeg));
-            properties.setProperty("minsumdegcluster", String.valueOf(minDeg));
-            properties.setProperty("maxsumdegcluster", String.valueOf(maxDeg));
-            properties.setProperty("stdsumdegcluster", format.format(stdDeg));
-        }
         // states and escapes
         properties.setProperty("avgnumberofstates", format.format((double) numStates / N));
         properties.setProperty("maxnumberofstates", format.format(maxStates));
@@ -261,14 +219,15 @@ public class AnsGraph extends ImmutableGraph {
         return ret;
     }
 
-    public static KmeansHistogram computeClusters(ImmutableGraph g, int k, int iterations, int escapePerc) {
+    public static GrayCodePartitions computePartitions(ImmutableGraph g, int k, int escapePerc, boolean clusterEscape) {
 
         int n = 0;
         for (final NodeIterator nodeIterator = g.nodeIterator(); nodeIterator.hasNext(); ) {
             nodeIterator.nextInt();
             if (nodeIterator.outdegree() > 0) n++;
         }
-        DatapointHistogram[] data = new DatapointHistogram[n];
+
+        Int2IntOpenHashMap[] data = new Int2IntOpenHashMap[n];
 
         int pos = 0;
         for (final NodeIterator nodeIterator = g.nodeIterator(); nodeIterator.hasNext(); ) {
@@ -276,13 +235,11 @@ public class AnsGraph extends ImmutableGraph {
             int outdegree = nodeIterator.outdegree();
             if (outdegree > 0) {
                 int[] succ = computeGaps(nodeIterator.successorArray(), outdegree);
-                data[pos++] = new DatapointHistogram(new SymbolStats(succ, outdegree, P_RANGE, escapePerc));
+                data[pos++] = new SymbolStats(succ, outdegree, P_RANGE, escapePerc).rawMap;
             }
         }
-        KmeansHistogram clusteringModel = new KmeansHistogram(k, iterations, data);
-        clusteringModel.fit();
-
-        return clusteringModel;
+        GrayCodePartitions model = new GrayCodePartitions(data, k, clusterEscape);
+        return model;
     }
 
 

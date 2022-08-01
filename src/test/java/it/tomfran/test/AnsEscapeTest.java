@@ -22,14 +22,13 @@ public class AnsEscapeTest {
         int[] numList = AnsTest.getRandom(100);
         for (int i = 0; i <= 5; i++) {
             System.out.println("\nCutting: " + 5*i + " percentage");
-            new SymbolStats(numList, numList.length, 10, 5*i).debugPrint();
+            new SymbolStats(numList, numList.length, 10, 5*i);
         }
     }
 
     @Test
     public void encoderTest() {
         int[] numList = AnsTest.getRandom(1000);
-//        for (int e : numList) System.out.print(e + ", "); System.out.println();
         for (int i = 1; i < 19; i++) {
             SymbolStats s = new SymbolStats(numList, numList.length, 10, 2);
             System.out.println("ENCODING: escape frequency: " + 5*i + " percent");
@@ -50,7 +49,6 @@ public class AnsEscapeTest {
 
         int[] numList = AnsTest.getRandom(1000);
         SymbolStats s = new SymbolStats(numList, numList.length, 10, 0);
-//        s.debugPrint();
         AnsModel m = new AnsModel(s);
         m.debugPrint();
         m.dump(modelStream);

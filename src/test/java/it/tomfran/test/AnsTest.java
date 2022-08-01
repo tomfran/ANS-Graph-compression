@@ -72,22 +72,6 @@ public class AnsTest {
     }
 
     @Test
-    public void equiprobableModel() {
-        System.out.println("Equiprobable model test");
-        double avgBits = 0;
-        for (int i = 0; i < runPerModel; i++) {
-            AnsModelEquiprobable m = new AnsModelEquiprobable(maxNum);
-
-            AnsEncoder ans = buildEncoder(m, numList, len);
-            AnsDecoder dec1 = buildDecoder(ans.stateList, ans.normCount, ans.escapedSymbolList, ans.escapedSymbolList.size(), m);
-            avgBits += getBits(ans);
-            decodeCheck(dec1, numList, len);
-        }
-        avgBits /= runPerModel;
-        System.out.println("Average bits per element: " + avgBits);
-    }
-
-    @Test
     public void optimalModel() {
         System.out.println("Optimal model test");
         double avgBits = 0;
@@ -102,50 +86,5 @@ public class AnsTest {
         avgBits /= runPerModel;
         System.out.println("Average bits per element: " + avgBits);
     }
-
-    @Test
-    public void orderStatisticModelDebug() {
-        System.out.println("Order statistics model test");
-
-        int[] list = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-//        int list[] = {3, 3, 3, 3, 5, 5, 5};
-        int len = list.length;
-        int median, thirdquartile, max;
-        median = list[len / 2];
-        thirdquartile = list[(int) (len * 0.75)];
-        max = list[len - 1];
-        System.out.println("List stats: \nmed: " + median + " tq: " + thirdquartile + " max: " + max);
-//        AnsModelOrderStatistic m = new AnsModelOrderStatistic(median, thirdquartile, max, 1024);
-        AnsModelOrderStatistic m = new AnsModelOrderStatistic(1, 2, 5, 1024);
-
-        for (int i = 0; i <= 5; i++) {
-            System.out.println("\nSym: " + i);
-            System.out.println("fs: " + m.getFrequency(i) + " cs: " + m.getCumulative(i));
-        }
-
-
-    }
-
-    @Test
-    public void orderStatisticModel() {
-        System.out.println("Order statistics model test");
-        int median, thirdquartile, max;
-        double avgBits = 0;
-        for (int i = 0; i < runPerModel; i++) {
-            median = numList[len / 2];
-            thirdquartile = numList[(int) (len * 0.75)];
-            max = numList[len - 1];
-
-            AnsModelOrderStatistic m = new AnsModelOrderStatistic(median, thirdquartile, max, 1024);
-
-            AnsEncoder ans = buildEncoder(m, numList, len);
-            AnsDecoder dec = buildDecoder(ans.stateList, ans.normCount, ans.escapedSymbolList, ans.escapedSymbolList.size(), m);
-            avgBits += getBits(ans);
-            decodeCheck(dec, numList, len);
-        }
-        avgBits /= runPerModel;
-        System.out.println("Average bits per element: " + avgBits);
-    }
-
 
 }

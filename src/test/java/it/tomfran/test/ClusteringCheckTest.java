@@ -20,7 +20,7 @@ public class ClusteringCheckTest {
         int it = 0;
         String ansPath = "data/uk100/clustering_iterations/" + it + "_uk100";
         ImmutableGraph g = BVGraph.load(bvPath);
-        AnsGraph.storeCluster(g, ansPath, 5, it, 10);
+        AnsGraph.storeCluster(g, ansPath, 5, 10, true);
         System.out.println(integrityCheck(g, AnsGraph.load(ansPath)));
     }
 }
