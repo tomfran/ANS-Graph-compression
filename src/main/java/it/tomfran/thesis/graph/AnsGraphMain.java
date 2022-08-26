@@ -53,7 +53,7 @@ public class AnsGraphMain {
             System.out.println("Mode: \n" +
                             "\t- 1: optimal, no params\n" +
                             "\t- 2: escaping, params: ESCAPE-PERC\n" +
-                            "\t- 3: clustering, params: K ITER PRIOR\n");
+                            "\t- 3: clustering, params: 0.0-1 partition percentage, 0.0-1 partition percentage 0-1 HE]\n");
             System.exit(0);
         }
         try {
@@ -67,7 +67,7 @@ public class AnsGraphMain {
             ImmutableGraph g = BVGraph.load(bvPath);
 //            BVGraph.store(random, bvPath + "_random");
 //            ImmutableGraph m2 = map(g, lexicographicalPermutation(g));
-            EFGraph.store(g, efPath);
+//            EFGraph.store(g, efPath);
             System.out.println("Graph: " + graphName);
             System.out.println("\t- nodes: " + g.numNodes());
             System.out.println("\t- arcs: " + g.numArcs());
@@ -95,42 +95,22 @@ public class AnsGraphMain {
             if (mode == 3) {
                 System.out.println("\n\n### Clustering ######");
                 if (args.length < 6) {
-                    System.out.println("Insert K, PRIOR ESCAPE, 1 or 0 CLUSTER ESCAPE after mode");
+                    System.out.println("Insert partition perc, prior escape, 1 or 0 cluster escape after mode");
                     System.exit(0);
                 }
-                int k = Integer.parseInt(args[3]);
+                double k = Double.parseDouble(args[3]);
                 int prior = Integer.parseInt(args[4]);
                 boolean clusterEscape = Integer.parseInt(args[5]) == 1;
-                if (k > g.numNodes() || prior > 100) {
-                    System.out.println("K must be smaller than num nodes, prior must be under 100");
+
+                if (k < 0 || k > 1 || prior > 100) {
+                    System.out.println("ERROR");
                     System.exit(0);
                 }
                 System.out.println("\n- Partitions: " + k + ", prior: " + prior + ", cluster escape: " + clusterEscape);
                 ansPath = "data/" + graphDir + "/clustered_ans/" + k + "_" + String.format("%d", prior) + "_" + args[5] + "_" + graphName;
-
-                System.out.println("Storing original graph");
                 AnsGraph.storeCluster(g, ansPath, k, prior, clusterEscape);
-                System.out.print("Integrity check: ");
-                System.out.println(integrityCheck(g, AnsGraph.load(ansPath)));
-//                System.out.println("Storing random permutation graph");
-//                ImmutableGraph random = map(g, randomPermutation(g, 0));
-//                AnsGraph.storeCluster(random, ansPath + "_random", k, prior, clusterEscape);
-//                try {
-//                    System.out.println("Storing gray permutation graph");
-//                    ImmutableGraph m1 = map(g, grayCodePermutation(g));
-//                    AnsGraph.storeCluster(m1, ansPath + "_gray", k, prior, clusterEscape);
-//                } catch (Exception e){
-//                    System.out.println("ERROR in gray permutation");
-//                }
-//                try {
-//                    System.out.println("Storing gray lexicographic graph");
-//                    AnsGraph.storeCluster(m2, ansPath + "_lex", k, prior, clusterEscape);
-//                } catch (Exception e){
-//                    System.out.println("ERROR in lex permutation");
-//                    e.printStackTrace();
-//                }
-//                System.out.println("Integrity check: " + integrityCheck(g, AnsGraph.load(ansPath)));
-//
+//                System.out.print("Integrity check: ");
+//                System.out.println(integrityCheck(g, AnsGraph.load(ansPath)));
             }
 
         } catch (IOException e) {

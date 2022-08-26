@@ -3,16 +3,12 @@ package it.tomfran.thesis.clustering;
 import it.tomfran.thesis.ans.SymbolStats;
 import it.tomfran.thesis.graph.AnsGraph;
 import it.unimi.dsi.bits.Fast;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntArrays;
-import it.unimi.dsi.fastutil.ints.IntComparator;
+import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.webgraph.LazyIntIterator;
 
 import static it.tomfran.thesis.ans.SymbolStats.ESCAPE_SYMBOL;
 import static it.tomfran.thesis.ans.SymbolStats.getKeysArray;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
+import static java.lang.Math.*;
 
 public class GrayCodePartitions {
 
@@ -23,10 +19,10 @@ public class GrayCodePartitions {
     public int n;
     public boolean heuristicEscape;
 
-    public GrayCodePartitions(Int2IntOpenHashMap[] datapoints, int numPartitions, boolean heuristicEscape) {
+    public GrayCodePartitions(Int2IntOpenHashMap[] datapoints, double partitionsPercentage, boolean heuristicEscape) {
         n = datapoints.length;
         this.heuristicEscape = heuristicEscape;
-        split(datapoints, numPartitions);
+        split(datapoints, partitionsPercentage);
     }
 
     private int[][] buildSortedKeys(Int2IntOpenHashMap[] datapoints) {
@@ -40,7 +36,7 @@ public class GrayCodePartitions {
         return keys;
     }
 
-    private void split(Int2IntOpenHashMap[] datapoints, int numPartitions) {
+    private void split(Int2IntOpenHashMap[] datapoints, double partitionsPercentage) {
 
         int[][] keys = buildSortedKeys(datapoints);
 
@@ -67,29 +63,32 @@ public class GrayCodePartitions {
         // sort hashmaps by gray code on symbols
         IntArrays.parallelQuickSort(perm, 0, n, grayComparator);
 
+        // TODO: aggiungi scelta partizioni intelligente
         // build assignment
-        int clusterSize = (int) Math.ceil((double) n / numPartitions);
-
-        assignment = new int[n];
-        int ind = 0;
-        for (i = 0; i < n; i += clusterSize) {
-            for (int j = i; j < min(n, i + clusterSize); j++)
-                assignment[perm[j]] = ind;
-            ind++;
-        }
-
-
+//        int clusterSize = (int) Math.ceil((double) n / numPartitions);
+//        int totalSyms = 0;
+//        for (Int2IntOpenHashMap e : datapoints)
+//            totalSyms += e.size();
+//        System.out.println("####\nTotal symbols: " + totalSyms + " avergage syms: " + (double)totalSyms/ datapoints.length);
+//        assignment = new int[n];
+//
+//        int ind = 0;
+//        for (i = 0; i < n; i += clusterSize) {
+//            for (int j = i; j < min(n, i + clusterSize); j++)
+//                assignment[perm[j]] = ind;
+//            ind++;
+//        }
+        assignment = findSplits(datapoints, partitionsPercentage);
+        int ind = assignment[assignment.length-1]+1;
         // build the final maps as the union of the cluster symbols
         Int2IntOpenHashMap[] finalMaps = new Int2IntOpenHashMap[ind];
         i = ind;
         while (i-- != 0) finalMaps[i] = new Int2IntOpenHashMap();
-        int t;
-        for (i = 0; i < n; i++) {
-            t = assignment[i];
-            for (Int2IntMap.Entry e : datapoints[i].int2IntEntrySet()) {
-                finalMaps[t].addTo(e.getIntKey(), e.getIntValue());
-            }
-        }
+
+        for (i = 0; i < n; i++)
+            for (Int2IntMap.Entry e : datapoints[i].int2IntEntrySet())
+                finalMaps[assignment[i]].addTo(e.getIntKey(), e.getIntValue());
+
         // add escaping with space heuristic
         if (heuristicEscape)
             for (i = 0; i < ind; i++)
@@ -100,6 +99,40 @@ public class GrayCodePartitions {
             partitionSymbolStats[i] = new SymbolStats(finalMaps[i], AnsGraph.P_RANGE);
             partitionSymbolStats[i].precomputeSymCumulative();
         }
+    }
+
+    private int[] findSplits(Int2IntOpenHashMap[] datapoints, double partitionsPercentage) {
+        int[] assignment = new int[datapoints.length];
+        int total = 0;
+        for (Int2IntOpenHashMap m : datapoints) total += m.size();
+
+        // define the max number of symbols in a model as the mean of models
+        int maxSymbols = (int) ceil((double)total/ datapoints.length);
+//        System.out.println("Initial max symbols: " + maxSymbols);
+
+        int totalSplits = datapoints.length;
+        // define the limit to the splits, that is a percentage of the total points
+        int limit = (int)ceil(datapoints.length*partitionsPercentage);
+        // while I still need to find a valid split
+        // double the max symbols, and check is this leads to a valid split,
+        // if not, double again...
+        System.out.println("Limit: " + limit);
+        while (totalSplits > limit) {
+            int ind = 0;
+            IntOpenHashSet dummy = new IntOpenHashSet();
+            for (int i = 0; i < datapoints.length; i++) {
+                if (dummy.size() > maxSymbols) {
+                    ind++;
+                    dummy.clear();
+                }
+                assignment[i] = ind;
+                dummy.addAll(datapoints[i].keySet());
+            }
+            totalSplits = ind + 1;
+            maxSymbols *= 2;
+            System.out.println("Total clusters: " + ind);
+        }
+        return assignment;
     }
 
     private Int2IntOpenHashMap heuristicEscaping(Int2IntOpenHashMap map) {

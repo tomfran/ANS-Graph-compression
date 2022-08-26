@@ -60,8 +60,8 @@ public class AnsGraph extends ImmutableGraph {
         this.escapeBits = escapeBits;
     }
 
-    public static void storeCluster(ImmutableGraph graph, CharSequence basename, int clusters, int priorEscapePerc, boolean clusterEscape) throws IOException {
-        GrayCodePartitions model = computePartitions(graph, clusters, priorEscapePerc, clusterEscape);
+    public static void storeCluster(ImmutableGraph graph, CharSequence basename, double partitionPerc, int priorEscapePerc, boolean clusterEscape) throws IOException {
+        GrayCodePartitions model = computePartitions(graph, partitionPerc, priorEscapePerc, clusterEscape);
         storeInternal(graph, basename, "cluster", model, -1);
     }
 
@@ -188,6 +188,8 @@ public class AnsGraph extends ImmutableGraph {
         // global stats
         properties.setProperty("writtenbits", String.valueOf(writtenBits));
         properties.setProperty("bitsperlink", format.format((double) writtenBits / numArcs));
+
+        System.out.println("Bits per link: " + (double) writtenBits / numArcs);
         // utils
         properties.setProperty("method", method.toString());
         properties.setProperty(ImmutableGraph.GRAPHCLASS_PROPERTY_KEY, AnsGraph.class.getName());
@@ -219,7 +221,7 @@ public class AnsGraph extends ImmutableGraph {
         return ret;
     }
 
-    public static GrayCodePartitions computePartitions(ImmutableGraph g, int k, int escapePerc, boolean clusterEscape) {
+    public static GrayCodePartitions computePartitions(ImmutableGraph g, double partitionPerc, int escapePerc, boolean clusterEscape) {
 
         int n = 0;
         for (final NodeIterator nodeIterator = g.nodeIterator(); nodeIterator.hasNext(); ) {
@@ -238,8 +240,7 @@ public class AnsGraph extends ImmutableGraph {
                 data[pos++] = new SymbolStats(succ, outdegree, P_RANGE, escapePerc).rawMap;
             }
         }
-        GrayCodePartitions model = new GrayCodePartitions(data, k, clusterEscape);
-        return model;
+        return new GrayCodePartitions(data, partitionPerc, clusterEscape);
     }
 
 
