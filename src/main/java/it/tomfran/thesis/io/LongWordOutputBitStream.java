@@ -11,15 +11,14 @@ import java.nio.channels.WritableByteChannel;
 
 public class LongWordOutputBitStream {
     private static final int BUFFER_SIZE = 64 * 1024;
-
-    /** The 64-bit buffer, whose upper {@link #free} bits do not contain data. */
-    private long buffer;
     /** The Java nio buffer used to write with prescribed endianness. */
     private final ByteBuffer byteBuffer;
-    /** The number of upper free bits in {@link #buffer} (strictly positive).*/
-    private int free;
     /** The output channel. */
     private final WritableByteChannel writableByteChannel;
+    /** The 64-bit buffer, whose upper {@link #free} bits do not contain data. */
+    private long buffer;
+    /** The number of upper free bits in {@link #buffer} (strictly positive). */
+    private int free;
 
     public LongWordOutputBitStream(final WritableByteChannel writableByteChannel, final ByteOrder byteOrder) {
         this.writableByteChannel = writableByteChannel;

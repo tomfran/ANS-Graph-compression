@@ -5,7 +5,13 @@ import it.unimi.dsi.fastutil.longs.LongArrayList;
 
 public class AnsDecoder {
 
-    /** Model used by the decoder. */
+    /** Escaped symbols list. */
+    public IntArrayList escapedSymbols;
+    /** Position of the decoded escape in escapedSymbols. */
+    public int escapedSymbolPos;
+    /** Escape index in the frequency map. */
+    public int escapeIndex;
+    /** Model used by this decoder. */
     protected AnsModel model;
     /** Number of states to decode. */
     protected int stateCount;
@@ -13,17 +19,16 @@ public class AnsDecoder {
     protected LongArrayList stateList;
     /** index of the current state. */
     protected int stateIndex;
-    /** Escaped symbols. */
-    public IntArrayList escapedSymbols;
-    public int escapedSymbolPos;
-    public int escapeIndex;
+
 
     /**
-     * Build a decoder starting from a model, a state list and a state count.
+     * Build an And decoder.
      *
-     * @param m AnsModel to use.
-     * @param sl State list.
-     * @param sc Number of states.
+     * @param m  AnsModel to use
+     * @param sl Stale list
+     * @param sc State count
+     * @param es Escape list
+     * @param ei Escape index
      */
     public AnsDecoder(AnsModel m, LongArrayList sl, int sc, IntArrayList es, int ei) {
         model = m;
@@ -78,13 +83,6 @@ public class AnsDecoder {
         if (symIndex == escapeIndex) return escapedSymbols.getInt(escapedSymbolPos++);
 
         return model.getInvSymbolMapping(symIndex);
-    }
-
-    public void debugPrint(){
-        System.out.println("STATES: ");
-        for (Long e : stateList){
-            System.out.println("- " + e);
-        }
     }
 
 }

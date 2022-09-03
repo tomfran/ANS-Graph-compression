@@ -1,10 +1,10 @@
 # Idea classes
 
 /out
-/gradle
 /build
 /data
 .gradle
+.idea/
 
 # Compiled class file
 *.class
@@ -26,6 +26,6 @@
 *.zip
 *.tar.gz
 *.rar
-
+!/gradle/wrapper/gradle-wrapper.jar
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*

@@ -11,34 +11,23 @@ import it.unimi.dsi.webgraph.LazyIntIterator;
 public class AnsSuccessorsReader implements LazyIntIterator {
 
     private static final boolean DEBUG = false;
-    /**
-     * Successors to read.
-     */
+    /** Successors to read. */
     protected int n;
-    /**
-     * AnsModel to use.
-     */
+    /** AnsModel to use. */
     protected AnsModel model;
-    /**
-     * Decoded to unpack the sequence.
-     */
+    /** Decoded to unpack the sequence. */
     protected AnsDecoder decoder;
-    /**
-     * Graph to load the required states.
-     */
+    /** Graph to load the required states. */
     protected LongBigList graph;
-    /**
-     * Node offset in the graph stream.
-     */
+    /** Node offset in the graph stream. */
     protected long offset;
-    /**
-     * LongWordBitReader to access the grpah stream.
-     */
+    /** LongWordBitReader to access the grpah stream. */
     protected LongWordBitReader graphLongWordBitReader;
-
+    /** LongWordBitReader to access the grpah stream. */
     protected int escapeBits;
-
+    /** Gaps accumulator. */
     private int base;
+    /** Number of reads. */
     private int consumed;
 
 
@@ -81,25 +70,26 @@ public class AnsSuccessorsReader implements LazyIntIterator {
         }
         // fill escapes
         int escapeLen = (int) graphLongWordBitReader.readGamma();
-        if (escapeLen == 0){
+        if (escapeLen == 0) {
             decoder = new AnsDecoder(model, sl, numStates, new IntArrayList(), model.escapeIndex);
         } else {
             int limitBit = (int) graphLongWordBitReader.readGamma();
-            int overflowBits = (int) graphLongWordBitReader.readGamma();
+            int overflowBits = limitBit + (int) graphLongWordBitReader.readGamma();
             int[] escapes = new int[escapeLen];
             IntArrayList toFill = new IntArrayList();
             for (int i = 0; i < escapeLen; i++) {
-                if ((int) graphLongWordBitReader.readState(1) == 1) {
-                    toFill.add(i);
-                }
-                escapes[i] = (int) graphLongWordBitReader.readState(limitBit);
+                //                    toFill.add(i);
+                if ((int) graphLongWordBitReader.readState(1) == 1)
+                    escapes[i] = (int) graphLongWordBitReader.readState(overflowBits);
+                else
+                    escapes[i] = (int) graphLongWordBitReader.readState(limitBit);
             }
-            // fill overflow
-            int over;
-            for (int i = 0; i < toFill.size(); i++) {
-                over = (int) graphLongWordBitReader.readState(overflowBits);
-                escapes[toFill.getInt(i)] |= (over << limitBit);
-            }
+//            // fill overflow
+//            int over;
+//            for (int i = 0; i < toFill.size(); i++) {
+//                over = (int) graphLongWordBitReader.readState(overflowBits);
+//                escapes[toFill.getInt(i)] |= (over << limitBit);
+//            }
             decoder = new AnsDecoder(model, sl, numStates, new IntArrayList(escapes), model.escapeIndex);
         }
     }

@@ -1,37 +1,43 @@
 package it.tomfran.thesis.ans;
 
-import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrays;
+import it.unimi.dsi.fastutil.ints.IntComparator;
 import it.unimi.dsi.sux4j.util.EliasFanoIndexedMonotoneLongBigList;
 
 public class SymbolStats {
 
+    /** Default escape symbol. */
     public static final int ESCAPE_SYMBOL = -2;
     /** Symbol frequencies observed in the input. */
     public Int2IntOpenHashMap rawMap;
     /** Symbol to index mapping. */
     public Int2IntOpenHashMap symbolsMapping;
-    /** Index to symbol mapping. */
-    protected Int2IntOpenHashMap invSymbolsMapping;
     /** Ordered symbol frequencies. */
     public int[] frequencies;
-    /** Ordered symbol frequencies. */
-    public int[] rawFrequencies;
     /** Sum of frequencies. */
     public int total;
     /** Power of two to approximate frequencies. */
     public int precision;
+    /** Whenever escaping is used or not. */
     public boolean escaping;
+    /** Escape index in the frequencies. */
     public int escapeIndex;
-
+    /** Cumulative array. */
     public int[] cumulative;
+    /** Structure to get sym primitive. */
     public EliasFanoIndexedMonotoneLongBigList sym;
+    /** Index to symbol mapping. */
+    protected Int2IntOpenHashMap invSymbolsMapping;
 
     /**
      * Build symbols statistics from an int array.
      *
-     * @param iterator array to scan.
-     * @param length   length of the array.
-     * @param d        power of two to approximate probabilities.
+     * @param iterator                  array to scan.
+     * @param length                    length of the array.
+     * @param d                         power of two to approximate probabilities.
+     * @param escapeThresholdPercentage percentage to cut elements.
      */
     public SymbolStats(int[] iterator, int length, int d, int escapeThresholdPercentage) {
         precision = 1 << d;
@@ -41,15 +47,37 @@ public class SymbolStats {
         buildFrequencies();
     }
 
-    public SymbolStats(Int2IntOpenHashMap rawMap, int d){
-        precision = 1<<d;
+    /**
+     * Build a symbols stats from a raw frequency map and a precision.
+     *
+     * @param rawMap Map containing sym, frequency
+     * @param d      precision
+     */
+    public SymbolStats(Int2IntOpenHashMap rawMap, int d) {
+        precision = 1 << d;
         escaping = rawMap.containsKey(ESCAPE_SYMBOL);
         escapeIndex = -1;
         this.rawMap = rawMap;
         buildFrequencies();
     }
 
-    private Int2IntOpenHashMap computeRawFrequencies(int[] iterator, int length, int escapeThresholdPercentage){
+    /**
+     * Returns keys of a Int2IntOpenHashMap as an array
+     *
+     * @param m Int2IntOpenHashMap
+     * @return array with the keys.
+     */
+    public static int[] getKeysArray(Int2IntOpenHashMap m) {
+        int n = m.size();
+        // sort elements by value
+        int[] keys = new int[n];
+        int pos = 0;
+        for (int e : m.keySet())
+            keys[pos++] = e;
+        return keys;
+    }
+
+    private Int2IntOpenHashMap computeRawFrequencies(int[] iterator, int length, int escapeThresholdPercentage) {
         // count element frequencies
         int totalTmp = 0;
         Int2IntOpenHashMap freqMap = new Int2IntOpenHashMap();
@@ -63,11 +91,11 @@ public class SymbolStats {
         int[] keysBeforeCutting = getKeysArray(freqMap);
         IntArrays.parallelQuickSort(keysBeforeCutting,
                 ((IntComparator) (k1, k2) -> freqMap.get(k1) - freqMap.get(k2))
-                        .thenComparing((k1, k2) -> k2-k1));
+                        .thenComparing((k1, k2) -> k2 - k1));
 
         // cut all keys that comes before the threshold
-        int threshold = (int)((double)freqMap.size()/100*escapeThresholdPercentage);
-        escaping = (threshold>0);
+        int threshold = (int) ((double) freqMap.size() / 100 * escapeThresholdPercentage);
+        escaping = (threshold > 0);
         for (int i = 0; i < threshold; i++) {
             k = keysBeforeCutting[i];
             v = freqMap.get(k);
@@ -88,7 +116,7 @@ public class SymbolStats {
         int[] keys = getKeysArray(rawMap);
         IntArrays.parallelQuickSort(keys,
                 ((IntComparator) (k1, k2) -> rawMap.get(k2) - rawMap.get(k1))
-                        .thenComparing((k1, k2) -> k1-k2));
+                        .thenComparing((k1, k2) -> k1 - k2));
 
         // symbols mappings
         symbolsMapping = new Int2IntOpenHashMap();
@@ -115,7 +143,11 @@ public class SymbolStats {
             escapeIndex = symbolsMapping.get(ESCAPE_SYMBOL);
     }
 
-    public void precomputeSymCumulative(){
+    /**
+     * Utility function to compute cumulative and frequencies. It's
+     * required by gray code partitions.
+     */
+    public void precomputeSymCumulative() {
         int N = frequencies.length;
         cumulative = new int[N];
         cumulative[0] = 1;
@@ -125,21 +157,6 @@ public class SymbolStats {
 
         // sym
         sym = new EliasFanoIndexedMonotoneLongBigList(new IntArrayList(cumulative));
-    }
-
-    /**
-     * Returns keys of a Int2IntOpenHashMap as an array
-     * @param m Int2IntOpenHashMap
-     * @return array with the keys.
-     */
-    public static int[] getKeysArray(Int2IntOpenHashMap m) {
-        int n = m.size();
-        // sort elements by value
-        int[] keys = new int[n];
-        int pos = 0;
-        for (int e : m.keySet())
-            keys[pos++] = e;
-        return keys;
     }
 
 }

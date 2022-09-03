@@ -34,8 +34,6 @@ public class AnsEscapeTest {
             System.out.println("ENCODING: escape frequency: " + 5*i + " percent");
             AnsEncoder e = new AnsEncoder(new AnsModel(s));
             e.encodeAll(numList, numList.length);
-            e.debugPrint();
-
         }
     }
 

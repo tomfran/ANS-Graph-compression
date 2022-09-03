@@ -161,11 +161,11 @@ public class LongWordBitReader {
 
     }
 
-    public long readLong(){
+    public long readLong() {
         return extractInternal(Long.SIZE);
     }
 
-    public long readState(int len){
+    public long readState(int len) {
 //        System.out.println("\n\nREADSTATE CALLED: ");
         return extractInternal(len);
     }

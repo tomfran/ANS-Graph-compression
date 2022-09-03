@@ -10,10 +10,9 @@ import java.io.IOException;
 public class AnsGraphErrorTest {
 
     static void genGraph(int n, double e) throws IOException {
-
         ErdosRenyiGraph g = new ErdosRenyiGraph(n, e);
         String filename = "data/error/ans";
-        AnsGraph.storeEscape(g, filename, 50);
+        AnsGraph.storeCluster(g, filename, 0.01, 0, true);
         String f2 = "data/error/ef";
         EFGraph.store(g, f2);
     }
@@ -80,19 +79,18 @@ public class AnsGraphErrorTest {
 
     public static void main(String[] args) throws IOException {
         final boolean GEN = true;
-
         boolean check = true;
         int from, to, p, pergen;
-        from = 20;
-        p = 1;
-        to = 30;
-        pergen = 100;
+        from = 10000;
+        p = 10000;
+        to = 100000;
+        pergen = 5;
         if (GEN)
             for (int n = from; n <= to && check; n += p) {
                 System.out.println("GEN:" + n);
                 for (int i = 0; i < pergen && check; i++) {
 //                    System.out.println("\n\n#######\n\n");
-                    genGraph(n, 0.1);
+                    genGraph(n, 0.01);
                     if (!check()) {
                         System.out.println("###### ERROR FOUND");
                         System.exit(1);

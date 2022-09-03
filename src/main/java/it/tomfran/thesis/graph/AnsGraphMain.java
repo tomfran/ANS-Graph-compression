@@ -4,12 +4,8 @@ import it.unimi.dsi.webgraph.BVGraph;
 import it.unimi.dsi.webgraph.EFGraph;
 import it.unimi.dsi.webgraph.ImmutableGraph;
 import it.unimi.dsi.webgraph.LazyIntIterator;
-import it.unimi.dsi.webgraph.algo.ConnectedComponents;
-import it.unimi.dsi.webgraph.algo.StronglyConnectedComponents;
 
 import java.io.IOException;
-
-import static it.unimi.dsi.webgraph.Transform.*;
 
 public class AnsGraphMain {
 
@@ -30,11 +26,13 @@ public class AnsGraphMain {
             for (int j = 0; j < ans.outdegree(i); j++)
                 if (i1.nextInt() != i2.nextInt()) {
                     System.out.println("Successors error for node " + i);
-                    int s1[], s2[];
+                    int[] s1, s2;
                     s1 = g.successorArray(i);
                     s2 = ans.successorArray(i);
-                    for (int k = 0; k < g.outdegree(i); k++) System.out.print(s1[k] + ", "); System.out.println("\n\n");
-                    for (int k = 0; k < g.outdegree(i); k++) System.out.print(s2[k] + ", "); System.out.println();
+                    for (int k = 0; k < g.outdegree(i); k++) System.out.print(s1[k] + ", ");
+                    System.out.println("\n\n");
+                    for (int k = 0; k < g.outdegree(i); k++) System.out.print(s2[k] + ", ");
+                    System.out.println();
                     return false;
                 }
 
@@ -48,12 +46,12 @@ public class AnsGraphMain {
     }
 
     public static void main(String[] args) {
-        if (args.length < 3){
+        if (args.length < 3) {
             System.out.println("Enter graph directory, graph name and mode, with req parameters");
             System.out.println("Mode: \n" +
-                            "\t- 1: optimal, no params\n" +
-                            "\t- 2: escaping, params: ESCAPE-PERC\n" +
-                            "\t- 3: clustering, params: 0.0-1 partition percentage, 0.0-1 partition percentage 0-1 HE]\n");
+                    "\t- 1: optimal, no params\n" +
+                    "\t- 2: escaping, params: ESCAPE-PERC\n" +
+                    "\t- 3: clustering, params: 0.0-1 partition percentage, 0.0-1 partition percentage 0-1 HE]\n");
             System.exit(0);
         }
         try {
@@ -64,19 +62,17 @@ public class AnsGraphMain {
             String bvPath = "data/" + graphDir + "/bv/" + graphName;
             String efPath = "data/" + graphDir + "/ef/" + graphName;
             String ansPath;
-            ImmutableGraph g = BVGraph.load(bvPath);
-//            BVGraph.store(random, bvPath + "_random");
-//            ImmutableGraph m2 = map(g, lexicographicalPermutation(g));
-//            EFGraph.store(g, efPath);
+            ImmutableGraph g = BVGraph.load(bvPath, 0);
             System.out.println("Graph: " + graphName);
             System.out.println("\t- nodes: " + g.numNodes());
             System.out.println("\t- arcs: " + g.numArcs());
-
+            if (mode == 4) {
+                EFGraph.store(g, efPath);
+            }
             if (mode == 1) {
                 System.out.println("\n\n### Optimal store ###");
                 ansPath = "data/" + graphDir + "/optimal_ans/" + graphName;
                 AnsGraph.store(g, ansPath);
-//                System.out.println("Integrity check: " + integrityCheck(g, AnsGraph.load(ansPath)));
             }
 
             if (mode == 2) {
@@ -87,9 +83,8 @@ public class AnsGraphMain {
                 }
                 int esc = Integer.parseInt(args[3]);
                 System.out.println("\nEscape: " + esc);
-                ansPath = "data/" + graphDir + "/escaped_ans/" + String.format("%03d_", esc) + graphName;
+                ansPath = "data/" + graphDir + "/escaped_ans/" + graphName;
                 AnsGraph.storeEscape(g, ansPath, esc);
-//                System.out.println("Integrity check: " + integrityCheck(g, AnsGraph.load(ansPath)));
             }
 
             if (mode == 3) {
@@ -107,7 +102,7 @@ public class AnsGraphMain {
                     System.exit(0);
                 }
                 System.out.println("\n- Partitions: " + k + ", prior: " + prior + ", cluster escape: " + clusterEscape);
-                ansPath = "data/" + graphDir + "/clustered_ans/" + k + "_" + String.format("%d", prior) + "_" + args[5] + "_" + graphName;
+                ansPath = "data/" + graphDir + "/clustered_ans/ans";
                 AnsGraph.storeCluster(g, ansPath, k, prior, clusterEscape);
 //                System.out.print("Integrity check: ");
 //                System.out.println(integrityCheck(g, AnsGraph.load(ansPath)));

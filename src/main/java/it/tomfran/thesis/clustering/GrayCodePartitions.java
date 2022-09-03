@@ -8,17 +8,31 @@ import it.unimi.dsi.webgraph.LazyIntIterator;
 
 import static it.tomfran.thesis.ans.SymbolStats.ESCAPE_SYMBOL;
 import static it.tomfran.thesis.ans.SymbolStats.getKeysArray;
-import static java.lang.Math.*;
+import static java.lang.Math.ceil;
+import static java.lang.Math.max;
 
 public class GrayCodePartitions {
 
+    /** Build precision. */
     final int PRECISION = 1 << AnsGraph.P_RANGE;
+    /** Alpha parameter in heuristic escape. */
     final double ALPHA = 0.9;
+    /** Datapoints assignments. */
     public int[] assignment;
+    /** Computed models from partitions. */
     public SymbolStats[] partitionSymbolStats;
+    /** Number of datapoints. */
     public int n;
+    /** Whenever to perform heuristic escape. */
     public boolean heuristicEscape;
 
+    /**
+     * Initialize partiotions.
+     *
+     * @param datapoints           Maps containing sym, frequency.
+     * @param partitionsPercentage Percentage of models to have.
+     * @param heuristicEscape      Perform or not heuristic escape.
+     */
     public GrayCodePartitions(Int2IntOpenHashMap[] datapoints, double partitionsPercentage, boolean heuristicEscape) {
         n = datapoints.length;
         this.heuristicEscape = heuristicEscape;
@@ -62,24 +76,9 @@ public class GrayCodePartitions {
         };
         // sort hashmaps by gray code on symbols
         IntArrays.parallelQuickSort(perm, 0, n, grayComparator);
-
-        // TODO: aggiungi scelta partizioni intelligente
-        // build assignment
-//        int clusterSize = (int) Math.ceil((double) n / numPartitions);
-//        int totalSyms = 0;
-//        for (Int2IntOpenHashMap e : datapoints)
-//            totalSyms += e.size();
-//        System.out.println("####\nTotal symbols: " + totalSyms + " avergage syms: " + (double)totalSyms/ datapoints.length);
-//        assignment = new int[n];
-//
-//        int ind = 0;
-//        for (i = 0; i < n; i += clusterSize) {
-//            for (int j = i; j < min(n, i + clusterSize); j++)
-//                assignment[perm[j]] = ind;
-//            ind++;
-//        }
+        // find splits
         assignment = findSplits(datapoints, partitionsPercentage);
-        int ind = assignment[assignment.length-1]+1;
+        int ind = assignment[assignment.length - 1] + 1;
         // build the final maps as the union of the cluster symbols
         Int2IntOpenHashMap[] finalMaps = new Int2IntOpenHashMap[ind];
         i = ind;
@@ -107,12 +106,11 @@ public class GrayCodePartitions {
         for (Int2IntOpenHashMap m : datapoints) total += m.size();
 
         // define the max number of symbols in a model as the mean of models
-        int maxSymbols = (int) ceil((double)total/ datapoints.length);
-//        System.out.println("Initial max symbols: " + maxSymbols);
+        int maxSymbols = (int) ceil((double) total / datapoints.length);
 
         int totalSplits = datapoints.length;
         // define the limit to the splits, that is a percentage of the total points
-        int limit = (int)ceil(datapoints.length*partitionsPercentage);
+        int limit = (int) ceil(datapoints.length * partitionsPercentage);
         // while I still need to find a valid split
         // double the max symbols, and check is this leads to a valid split,
         // if not, double again...
@@ -242,10 +240,22 @@ public class GrayCodePartitions {
         return 2 * msb + 1;
     }
 
+    /**
+     * Return the partition of a node.
+     *
+     * @param i node index.
+     * @return node partition.
+     */
     public int getPartitionIndex(int i) {
         return assignment[i];
     }
 
+    /**
+     * Get the symbols stats associated with the node i.
+     *
+     * @param i node index.
+     * @return SymbolsStats representing the partition model.
+     */
     public SymbolStats getPartition(int i) {
         return partitionSymbolStats[assignment[i]];
     }

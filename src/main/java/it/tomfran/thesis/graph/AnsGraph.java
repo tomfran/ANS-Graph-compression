@@ -22,13 +22,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.nio.channels.ScatteringByteChannel;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 
 import static it.unimi.dsi.webgraph.EFGraph.loadLongBigList;
-import static java.lang.Math.*;
+import static java.lang.Math.max;
 
 public class AnsGraph extends ImmutableGraph {
 
@@ -37,7 +38,6 @@ public class AnsGraph extends ImmutableGraph {
     public static final String MODEL_EXTENSION = ".model";
     public static final String PROPERTIES_EXTENSION = ".properties";
     public static final int P_RANGE = 12;
-    private static final boolean PROGRESS = false;
 
     public int escapeBits;
     /** Elias fano sequence for the offsets. */
@@ -48,8 +48,11 @@ public class AnsGraph extends ImmutableGraph {
     protected AnsModel[] ansModels;
     /** Long big list containing the ecnoded graph. */
     protected LongBigList graph;
-    /** LongWordBitReader to read outdegrees.*/
+    /** LongWordBitReader to read outdegrees. */
     protected LongWordBitReader outdegreeLongWordBitReader;
+
+    private int cachedId;
+    private AnsModel cachedModel;
 
     public AnsGraph(int numNodes, AnsModel[] ansModels, LongBigList offsets, LongBigList graph, LongWordBitReader outdegreeLongWordBitReader, int escapeBits) {
         this.numNodes = numNodes;
@@ -58,6 +61,8 @@ public class AnsGraph extends ImmutableGraph {
         this.graph = graph;
         this.outdegreeLongWordBitReader = outdegreeLongWordBitReader;
         this.escapeBits = escapeBits;
+        this.cachedId = -1;
+        this.cachedModel = null;
     }
 
     public static void storeCluster(ImmutableGraph graph, CharSequence basename, double partitionPerc, int priorEscapePerc, boolean clusterEscape) throws IOException {
@@ -172,7 +177,7 @@ public class AnsGraph extends ImmutableGraph {
         properties.setProperty("arcs", String.valueOf(numArcs));
         properties.setProperty("byteorder", byteOrder.toString());
         // models
-        properties.setProperty("numberofmodels", format.format(((method == "cluster")? model.partitionSymbolStats.length : nodeIndex)));
+        properties.setProperty("numberofmodels", format.format(((method == "cluster") ? model.partitionSymbolStats.length : nodeIndex)));
         properties.setProperty("avgnumberofsymbols", format.format((double) numSymbols / N));
         properties.setProperty("maxnumberofsymbols", format.format(maxSymbols));
         properties.setProperty("bitsformodels", String.valueOf(modelBits));
@@ -243,14 +248,6 @@ public class AnsGraph extends ImmutableGraph {
         return new GrayCodePartitions(data, partitionPerc, clusterEscape);
     }
 
-
-    /**
-     * Load an ans encoded graph.
-     *
-     * @param basename Path to the file.
-     * @return Loaded AnsGraph.
-     * @throws IOException
-     */
     public static AnsGraph load(CharSequence basename) throws IOException {
         return loadInternal(basename);
     }
@@ -325,7 +322,11 @@ public class AnsGraph extends ImmutableGraph {
         int id = modelId(i);
         if (id == -1)
             return null;
-        return ansModels[id].copy();
+        if (id == cachedId)
+            return cachedModel;
+        cachedId = id;
+        cachedModel = ansModels[id].copy();
+        return cachedModel;
     }
 
     public int modelId(int i) {
