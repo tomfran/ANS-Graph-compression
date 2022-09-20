@@ -98,9 +98,10 @@ public class AnsGraph extends ImmutableGraph {
         long numArcs = 0;
         // outdegree bits
         long outdegreeBits = 0;
+
         // state and models bits
-        long successorsBits, modelBits, numStates, maxStates, numSymbols, maxSymbols;
-        successorsBits = modelBits = numStates = maxStates = numSymbols = maxSymbols = 0;
+        long stateBits, escapeBits, modelBits, successorsBits, numStates, maxStates, numSymbols, maxSymbols;
+        stateBits = modelBits = numStates = maxStates = numSymbols = maxSymbols = escapeBits = successorsBits = 0;
         //escapes
         long numEscapes, maxEscapes, escapedEdges;
         numEscapes = maxEscapes = escapedEdges = 0;
@@ -146,6 +147,9 @@ public class AnsGraph extends ImmutableGraph {
                 } else if (method == "cluster")
                     successorsBits += e.dump(graphStream, model.getPartitionIndex(nodeIndex));
 
+                stateBits += e.stateBits;
+                escapeBits += e.escapeBits;
+
                 nodeIndex++;
                 // update properties
                 numStates += e.stateList.size();
@@ -188,13 +192,13 @@ public class AnsGraph extends ImmutableGraph {
         properties.setProperty("maxnumberofescapes", format.format(maxEscapes));
         properties.setProperty("bitsforsuccessors", String.valueOf(successorsBits));
         properties.setProperty("bitsforoutdegrees", String.valueOf(outdegreeBits));
+        properties.setProperty("bitsforstates", String.valueOf(stateBits));
+        properties.setProperty("bitsforescapes", String.valueOf(escapeBits));
         properties.setProperty("escapededges", String.valueOf(escapedEdges));
         properties.setProperty("escapededgespercentage", format.format((double) escapedEdges / numArcs));
         // global stats
         properties.setProperty("writtenbits", String.valueOf(writtenBits));
         properties.setProperty("bitsperlink", format.format((double) writtenBits / numArcs));
-
-        System.out.println("Bits per link: " + (double) writtenBits / numArcs);
         // utils
         properties.setProperty("method", method.toString());
         properties.setProperty(ImmutableGraph.GRAPHCLASS_PROPERTY_KEY, AnsGraph.class.getName());

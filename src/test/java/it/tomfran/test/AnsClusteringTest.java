@@ -18,8 +18,8 @@ public class AnsClusteringTest {
 
     public static void main(String[] args) throws IOException {
 
-        ImmutableGraph g = BVGraph.load("data/uk100/bv/uk100");
-        AnsGraph.storeCluster(g, "data/test/uk100", 1000, 0, true);
+        ImmutableGraph g = BVGraph.load("data/uk-2007-05@100000/nat/bv/uk-2007-05@100000");
+        AnsGraph.storeCluster(g, "data/test/uk100", 0.0001, 0, true);
         System.out.println(integrityCheck(g, AnsGraph.load("data/test/uk100")));
     }
 

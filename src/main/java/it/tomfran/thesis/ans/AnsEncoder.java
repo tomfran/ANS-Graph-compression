@@ -23,6 +23,10 @@ public class AnsEncoder {
     protected long state;
     /** Maximum seen binary magnitute. */
     private int maxBitsEscape;
+    /** Bits per escapes during dump. */
+    public long escapeBits;
+    /** Bits per states during dump. */
+    public long stateBits;
 
 
     /**
@@ -38,6 +42,8 @@ public class AnsEncoder {
         escapedSymbolList = new IntArrayList();
         escapeIndex = m.escapeIndex;
         maxBitsEscape = 0;
+        escapeBits = 0;
+        stateBits = 0;
     }
 
     /**
@@ -116,36 +122,32 @@ public class AnsEncoder {
 
         // escapes
         // compute required bits by each escape
+        stateBits = written;
         if (escapedSymbolList.size() == 0) {
             written += os.writeGamma(0);
+            stateBits = written;
             return written;
         }
-
         int limitBit = findBestLimit();
         // write size, limitBits, max-limit
+
         written += os.writeGamma(escapedSymbolList.size());
         written += os.writeGamma(limitBit);
         written += os.writeGamma(maxBitsEscape - limitBit);
-
         // write each escape
-        IntArrayList overflow = new IntArrayList();
         int num;
         for (int i = escapedSymbolList.size() - 1; i >= 0; i--) {
             // if overflow, write a one and the lower bits
             num = escapedSymbolList.getInt(i);
             if ((Math.max(1, (int) (Math.log(num) / Math.log(2) + 1))) > limitBit) {
-                overflow.add(num);
                 written += os.append(1, 1);
-//                written += os.append(num & ((1L << limitBit) - 1), limitBit);
                 written += os.append(num & ((1L << maxBitsEscape) - 1), maxBitsEscape);
             } else {
                 written += os.append(0, 1);
                 written += os.append(num, limitBit);
             }
         }
-//        // write upper bits of overflow
-//        for (int e : overflow)
-//            written += os.append(e >>> limitBit, maxBitsEscape - limitBit);
+        escapeBits = written - stateBits;
         return written;
     }
 
