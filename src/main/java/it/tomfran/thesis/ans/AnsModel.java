@@ -25,7 +25,7 @@ public class AnsModel {
     /** Cumulative array. */
     protected int[] cumulative;
     /** Symbols array. */
-    protected EliasFanoIndexedMonotoneLongBigList sym;
+    public EliasFanoIndexedMonotoneLongBigList sym;
 
     /**
      * Build an Ans model from a symbol stats object.
@@ -230,18 +230,15 @@ public class AnsModel {
      * @return Copy of the current model.
      */
     public AnsModel copy() {
-
-        return this;
-//        AnsModel m = new AnsModel();
-//        m.N = N;
-//        m.M = M;
-////        m.symbolsMapping = symbolsMapping.clone();
-//        m.invSymbolsMapping = invSymbolsMapping.clone();
-//        m.frequencies = frequencies.clone();
-//        m.cumulative = cumulative.clone();
-//        m.escapeIndex = escapeIndex;
-//        m.sym = sym;
-//        return m;
+        AnsModel m = new AnsModel();
+        m.N = N;
+        m.M = M;
+        m.invSymbolsMapping = invSymbolsMapping;
+        m.frequencies = frequencies;
+        m.cumulative = cumulative;
+        m.escapeIndex = escapeIndex;
+        m.sym = sym;
+        return m;
     }
 
 }

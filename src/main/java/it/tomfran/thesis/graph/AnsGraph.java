@@ -44,6 +44,8 @@ public class AnsGraph extends ImmutableGraph {
     public LongBigList offsets;
     /** Number of nodes. */
     protected int numNodes;
+    /** Number of arcs. */
+    protected int numArcs;
     /** Array with the And models used in the graph. */
     protected AnsModel[] ansModels;
     /** Long big list containing the ecnoded graph. */
@@ -51,18 +53,16 @@ public class AnsGraph extends ImmutableGraph {
     /** LongWordBitReader to read outdegrees. */
     protected LongWordBitReader outdegreeLongWordBitReader;
 
-    private int cachedId;
-    private AnsModel cachedModel;
+    public AnsGraph() {}
 
-    public AnsGraph(int numNodes, AnsModel[] ansModels, LongBigList offsets, LongBigList graph, LongWordBitReader outdegreeLongWordBitReader, int escapeBits) {
+    public AnsGraph(int numNodes, int numArcs, AnsModel[] ansModels, LongBigList offsets, LongBigList graph, LongWordBitReader outdegreeLongWordBitReader, int escapeBits) {
         this.numNodes = numNodes;
+        this.numArcs = numArcs;
         this.ansModels = ansModels;
         this.offsets = offsets;
         this.graph = graph;
         this.outdegreeLongWordBitReader = outdegreeLongWordBitReader;
         this.escapeBits = escapeBits;
-        this.cachedId = -1;
-        this.cachedModel = null;
     }
 
     public static void storeCluster(ImmutableGraph graph, CharSequence basename, double partitionPerc, int priorEscapePerc, boolean clusterEscape) throws IOException {
@@ -266,6 +266,7 @@ public class AnsGraph extends ImmutableGraph {
 
         // num nodes
         final int nodes = Integer.parseInt(properties.getProperty("nodes"));
+        final int arcs = Integer.parseInt(properties.getProperty("arcs"));
         int escapeBits = (int) (Math.log(nodes) / Math.log(2) + 1);
 
         // byte order
@@ -292,7 +293,7 @@ public class AnsGraph extends ImmutableGraph {
         LongBigList offsets = new EliasFanoMonotoneLongBigList(nodes + 1, graph.size64() * (Long.SIZE + 1), new OffsetsLongIterator(offsetIbs, nodes));
         offsetIbs.close();
 
-        return new AnsGraph(nodes, ansModels, offsets, graph, new LongWordBitReader(graph, 0), escapeBits);
+        return new AnsGraph(nodes, arcs, ansModels, offsets, graph, new LongWordBitReader(graph, 0), escapeBits);
     }
 
     @Override
@@ -326,11 +327,7 @@ public class AnsGraph extends ImmutableGraph {
         int id = modelId(i);
         if (id == -1)
             return null;
-        if (id == cachedId)
-            return cachedModel;
-        cachedId = id;
-        cachedModel = ansModels[id].copy();
-        return cachedModel;
+        return ansModels[id].copy();
     }
 
     public int modelId(int i) {
@@ -342,8 +339,21 @@ public class AnsGraph extends ImmutableGraph {
     }
 
     @Override
+    public long numArcs() {
+        return numArcs;
+    }
+
+    @Override
     public ImmutableGraph copy() {
-        return null;
+        AnsGraph result = new AnsGraph();
+        result.escapeBits = this.escapeBits;
+        result.offsets = this.offsets;
+        result.numNodes = this.numNodes;
+        result.numArcs = this.numArcs;
+        result.ansModels = this.ansModels;
+        result.graph = this.graph;
+        result.outdegreeLongWordBitReader = this.outdegreeLongWordBitReader;
+        return result;
     }
 
     /**
