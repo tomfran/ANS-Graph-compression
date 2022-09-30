@@ -199,6 +199,7 @@ public class AnsGraph extends ImmutableGraph {
         // global stats
         properties.setProperty("writtenbits", String.valueOf(writtenBits));
         properties.setProperty("bitsperlink", format.format((double) writtenBits / numArcs));
+//        System.out.println("Bits per link: " + format.format((double) writtenBits / numArcs));
         // utils
         properties.setProperty("method", method.toString());
         properties.setProperty(ImmutableGraph.GRAPHCLASS_PROPERTY_KEY, AnsGraph.class.getName());
