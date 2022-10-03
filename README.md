@@ -1,21 +1,22 @@
 # ANS Graph compression
-Graph compression using Asymmetric Numeral Systems.
 
-[Report link](https://github.com/tomfran/ANS-Graph-compression/blob/main/report/report.pdf)
+This repository focuses on the application of asymmetric numeral systems to
+large-scale graph compression.
 
-## Source code
-### ANS encoder decoder and model
-[Model source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/ans/AnsModel.java)
-[Encoder source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/ans/AnsEncoder.java) \
-[Decoder source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/ans/AnsDecoder.java)
+Asymmetric numeral systems are a family of entropy encoders that obtains
+compression quality comparable to arithmetic coding, thus optimal for a
+given source of symbols, while having a decoding speed similar to Huffman
+coding. They were presented by Jarek Duda and are heavily used in several
+different scenarios, such as Linux kernels, Facebook Zstandard, JPEG XL
+and many others.
 
-### Gray code partitions
-[Source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/clustering/GrayCodePartitions.java)
+This work presents an application of such encoders on large-scale web and
+social graphs. The final proposed methodology is the result of three iterations 
+and combines asymmetric numeral systems, instantaneous codes and
+patched frame of reference encoding.
 
-### Long input and output stream
-[LongWordBitReader source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/io/LongWordBitReader.java) \
-[LongWordOutputBitStream source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/io/LongWordOutputBitStream.java)
+The experimental results show how this methodology saves as much as 76 
+percent of space with respect to quasi-succinct representations and is 
+capable of storing graphs in as low as 3.5 bits per link.
 
-### ANS Graph
-[Graph source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/graph/AnsGraph.java) \
-[Successors reader source](https://github.com/tomfran/ANS-Graph-compression/blob/main/src/main/java/it/tomfran/thesis/graph/AnsSuccessorsReader.java)
+This was my Master's thesis at the University of Milan, the complete work can be read [here](https://github.com/tomfran/ANS-Graph-compression/tree/main/thesis/thesis.pdf).

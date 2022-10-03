@@ -16,10 +16,10 @@ public class CustomBenchmark {
         int REPEAT = 5000;
         int samples = 1500;
 
-//        CharSequence graph_name = "uk-2007-05@1000000";
+       CharSequence graph_name = "uk-2007-05@1000000";
 //        CharSequence graph_name = "indochina-2004";
 //        CharSequence graph_name = "enwiki-2013";
-        CharSequence graph_name = "dblp-2011";
+//        CharSequence graph_name = "dblp-2011";
         CharSequence basename = "data/" + graph_name + "/nat/";
 //        ImmutableGraph graph = AnsGraph.load(basename + "clustered_ans/ans");
 //        ImmutableGraph graph = EFGraph.load(basename + "ef/" + graph_name);
